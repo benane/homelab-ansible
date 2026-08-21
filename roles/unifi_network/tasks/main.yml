@@ -1,0 +1,19 @@
+---
+# only example config for now!
+- name: VLANs im UniFi Controller anlegen/aktualisieren
+  kempner.unifi.unifi_network:
+    site: "default"
+    name: "{{ item.name }}"
+    vlan_id: "{{ item.vlan_id }}"
+    subnet: "{{ item.subnet }}"
+    state: present
+  loop: "{{ unifi_networks }}"
+
+- name: Firewall-Regeln im UniFi Controller anlegen
+  kempner.unifi.unifi_firewall_rule:
+    site: "default"
+    name: "{{ item.name }}"
+    ruleset: "{{ item.ruleset }}"
+    action: "{{ item.action }}"
+    state: present
+  loop: "{{ unifi_firewall_rules }}"
