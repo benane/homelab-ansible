@@ -8,6 +8,7 @@ common_base_packages:
   - htop
   - python3
   - qemu-guest-agent
+  - prometheus-node-exporter
 
 # Standard-Shell für neue User
 common_default_shell: /bin/bash
