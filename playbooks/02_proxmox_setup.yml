@@ -1,0 +1,4 @@
+- name: Proxmox Nodes einrichten
+  hosts: proxmox_nodes
+  roles:
+    - proxmox_node
