@@ -23,12 +23,6 @@
     update_cache: true
   when: ansible_os_family == "Debian"
 
-- name: Node Exporter Service aktivieren und starten
-  ansible.builtin.systemd:
-    name: prometheus-node-exporter
-    state: started
-    enabled: true
-
 # -----------------------------------------------------------------------------
 # 3. ANSIBLE SERVICE-USER SETUP
 # -----------------------------------------------------------------------------
@@ -61,3 +55,13 @@
     user: ansible
     state: present
     key: "{{ lookup('file', (ansible_private_key_file | expanduser) + '.pub') }}"
+
+
+# -----------------------------------------------------------------------------
+# 4. ENABLE SERVICES
+# -----------------------------------------------------------------------------
+- name: Node Exporter Service aktivieren und starten
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
