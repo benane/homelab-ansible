@@ -1,0 +1,58 @@
+---
+# -----------------------------------------------------------------------------
+# VLAN & NETZWERK SEGMENTIERUNG
+# -----------------------------------------------------------------------------
+unifi_networks:
+  - name: "Management"
+    vlan_id: 1
+    subnet: "172.16.0.0/24"
+    domain_name: "mgmt.home" # only place holder to be defined
+
+  - name: "Servers"
+    vlan_id: 10
+    subnet: "172.16.10.0/24"
+    domain_name: "iot.home" # only place holder to be defined
+    purpose: "corporate" 
+
+  - name: "IoT"
+    vlan_id: 20
+    subnet: "172.16.20.0/24"
+    domain_name: "iot.home" # only place holder to be defined
+
+  - name: "Guest"
+    vlan_id: 30
+    subnet: "172.16.30.0/24"
+    purpose: "guest"
+
+  - name: "IoT Untrusted"
+    vlan_id: 40
+    subnet: "172.16.40.0/24"
+    domain_name: "iot.home" # only place holder to be defined
+    purpose: "untrusted" 
+
+  - name: "Clients"
+    vlan_id: 50
+    subnet: "172.16.50.0/24"
+    domain_name: "clients.home" # only place holder to be defined
+    purpose: "clients" 
+
+# -----------------------------------------------------------------------------
+# FIREWALL POLICIES
+# -----------------------------------------------------------------------------
+unifi_firewall_rules:
+  # work in progress
+  - name: "Block IoT to Management"
+    ruleset: "LAN_IN"
+    action: "drop"
+    src_network: "IoT_Klipper"
+    dst_network: "Management"
+    protocol: "all"
+
+  # Regel 2: Klipper 3D-Drucker-Zugriff auf OctoPrint/MQTT erlauben
+  - name: "Allow Klipper to Mosquitto"
+    ruleset: "LAN_IN"
+    action: "accept"
+    src_ip: "172.16.50.30"        # rpi-klipper
+    dst_ip: "172.16.10.201"       # lxc-mosquitto
+    dst_port: 1883
+    protocol: "tcp"
