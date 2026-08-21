@@ -23,6 +23,12 @@
     update_cache: true
   when: ansible_os_family == "Debian"
 
+- name: Node Exporter Service aktivieren und starten
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
+
 # -----------------------------------------------------------------------------
 # 3. ANSIBLE SERVICE-USER SETUP
 # -----------------------------------------------------------------------------
