@@ -1,0 +1,7 @@
+---
+- name: 05 - UniFi Network & Firewall Configuration
+  hosts: unifi_controllers
+  gather_facts: false
+
+  roles:
+    - unifi_network
