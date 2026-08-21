@@ -10,7 +10,7 @@
       ansible.posix.authorized_key:
         user: root
         state: present
-        key: "{{ lookup('file', '~/.ssh/id_ed25519_ansible.pub') }}"
+        key: "{{ lookup('file', ansible_private_key_file + '.pub') }}"
 
     - name: Passwort-Authentifizierung über SSH deaktivieren
       ansible.builtin.lineinfile:
