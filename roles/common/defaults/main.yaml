@@ -1,0 +1,13 @@
+---
+# Standard-System-Pakete für jedes Debian-basierte System
+common_base_packages:
+  - sudo
+  - curl
+  - wget
+  - git
+  - htop
+  - python3
+  - qemu-guest-agent
+
+# Standard-Shell für neue User
+common_default_shell: /bin/bash
