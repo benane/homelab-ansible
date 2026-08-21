@@ -1,1 +1,19 @@
+---
+# -----------------------------------------------------------------------------
+# SSH SERVER HARDENING
+# -----------------------------------------------------------------------------
+- name: SSH Passwort-Authentifizierung deaktivieren
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: SSH Daemon neu starten
 
+- name: Direct Root-Login über SSH verbieten
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: SSH Daemon neu starten
