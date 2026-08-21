@@ -1,1 +1,19 @@
+---
+- name: Proxmox Enterprise Repo deaktivieren
+  ansible.builtin.apt_repository:
+    repo: "deb https://enterprise.proxmox.com/debian/pve {{ ansible_distribution_release }} pve-enterprise"
+    state: absent
 
+- name: Proxmox No-Subscription Repo aktivieren
+  ansible.builtin.apt_repository:
+    repo: "deb http://download.proxmox.com/debian/pve {{ ansible_distribution_release }} pve-no-subscription"
+    state: present
+    filename: pve-no-subscription
+
+- name: Proxmox Subscription-Nag Banner entfernen
+  ansible.builtin.lineinfile:
+    path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+    regexp: 'res\.data\.status\.toLowerCase\(\) !== ''active'''
+    replace: 'false'
+    backup: true
+  notify: Restart PVE Proxy
