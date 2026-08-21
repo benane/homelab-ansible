@@ -1,35 +1,8 @@
 ---
-# First run should be done with parameters --ask-pass
-- name: Proxmox SSH Hardening
-  hosts: proxmox_nodes
+- name: 01 - Security & Hardening
+  hosts: all
   gather_facts: true
   become: true
 
-  tasks:
-    - name: SSH-Public-Key für Root hinterlegen
-      ansible.posix.authorized_key:
-        user: root
-        state: present
-        key: "{{ lookup('file', ansible_private_key_file + '.pub') }}"
-
-    - name: Passwort-Authentifizierung über SSH deaktivieren
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: '^#?PasswordAuthentication'
-        line: 'PasswordAuthentication no'
-        state: present
-      notify: Restart SSH
-
-    - name: Root-Login nur mit SSH-Key erlauben
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: '^#?PermitRootLogin'
-        line: 'PermitRootLogin prohibit-password'
-        state: present
-      notify: Restart SSH
-
-  handlers:
-    - name: Restart SSH
-      ansible.builtin.service:
-        name: sshd
-        state: restarted
+  roles:
+    - hardening
