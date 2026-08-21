@@ -7,7 +7,6 @@ common_base_packages:
   - git
   - htop
   - python3
-  - qemu-guest-agent
   - prometheus-node-exporter
 
 # Standard-Shell für neue User
