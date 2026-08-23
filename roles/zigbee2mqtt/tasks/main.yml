@@ -1,0 +1,20 @@
+---
+- name: NodeSource-Repo eintragen
+  ansible.builtin.deb822_repository:
+    name: nodesource
+    types: deb
+    uris: "https://deb.nodesource.com/node_26.x"
+    suites: nodistro
+    components: main
+    signed_by: "https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key"
+  register: node_repo
+
+- name: APT-Cache aktualisieren
+  ansible.builtin.apt:
+    update_cache: true
+  when: node_repo.changed
+
+- name: Node.js installieren
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
