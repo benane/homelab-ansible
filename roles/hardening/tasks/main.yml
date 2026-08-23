@@ -14,6 +14,6 @@
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PermitRootLogin'
-    line: 'PermitRootLogin no'
+    line: 'PermitRootLogin prohibit-password'
     state: present
   notify: SSH Daemon neu starten
