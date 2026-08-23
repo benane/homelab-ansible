@@ -1,4 +1,5 @@
 ---
 - import_playbook: containers/z2m_bootstrap.yml
 - import_playbook: 00_bootstrap.yml
+- import_playbook: 01_hardening.yml 
 - import_playbook: containers/z2m_install.yml

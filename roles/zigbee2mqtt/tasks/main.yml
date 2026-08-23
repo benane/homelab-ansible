@@ -18,3 +18,28 @@
   ansible.builtin.apt:
     name: nodejs
     state: present
+
+- name: Build-Werkzeuge installieren
+  ansible.builtin.apt:
+    name:
+      - make
+      - g++
+      - gcc
+    state: present
+
+- name: zigbee2mqtt-Repo klonen
+  ansible.builtin.git:
+    repo: https://github.com/Koenkk/zigbee2mqtt.git
+    dest: /opt/zigbee2mqtt
+    version: master
+    depth: 1
+
+- name: pnpm aktivieren (via corepack, in Node.js eingebaut)
+  ansible.builtin.command: corepack enable
+  changed_when: false   # corepack enable ist selbst nicht idempotent meldbar, daher hier bewusst nie "changed"
+
+- name: Abhängigkeiten installieren
+  ansible.builtin.command: pnpm install --frozen-lockfile
+  args:
+    chdir: /opt/zigbee2mqtt
+    creates: /opt/zigbee2mqtt/node_modules
