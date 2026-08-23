@@ -3,6 +3,9 @@
   gather_facts: false
 
   tasks:
+    - ansible.builtin.debug:
+        var: vault_proxmox_api_token_secret
+
     - name: Container-Liste abfragen (read-only)
       community.proxmox.proxmox_vm_info:
         api_host: 172.16.10.10
