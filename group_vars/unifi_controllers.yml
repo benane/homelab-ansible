@@ -11,22 +11,21 @@ unifi_networks:
   - name: "Servers"
     vlan_id: 10
     subnet: "172.16.10.0/24"
-    domain_name: "iot.home" # only place holder to be defined
-    purpose: "corporate" 
+    domain_name: "server.home" # only place holder to be defined
 
   - name: "IoT"
     vlan_id: 20
-    subnet: "172.16.20.0/24"
+    subnet: "10.13.20.0/24"
     domain_name: "iot.home" # only place holder to be defined
 
   - name: "Guest"
     vlan_id: 30
-    subnet: "172.16.30.0/24"
+    subnet: "10.13.30.0/24"
     purpose: "guest"
 
   - name: "IoT Untrusted"
     vlan_id: 40
-    subnet: "172.16.40.0/24"
+    subnet: "10.13.40.0/24"
     domain_name: "iot.home" # only place holder to be defined
     purpose: "untrusted" 
 
