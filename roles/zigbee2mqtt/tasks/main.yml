@@ -44,3 +44,27 @@
   args:
     chdir: /opt/zigbee2mqtt
     creates: /opt/zigbee2mqtt/node_modules
+
+- name: Datenverzeichnis anlegen
+  ansible.builtin.file:
+    path: /opt/zigbee2mqtt/data
+    state: directory
+
+- name: Konfiguration einspielen
+  ansible.builtin.template:
+    src: configuration.yaml.j2
+    dest: /opt/zigbee2mqtt/data/configuration.yaml
+  notify: zigbee2mqtt neu starten
+
+- name: systemd-Unit einspielen
+  ansible.builtin.template:
+    src: zigbee2mqtt.service.j2
+    dest: /etc/systemd/system/zigbee2mqtt.service
+  notify: zigbee2mqtt neu starten
+
+- name: zigbee2mqtt aktivieren und starten
+  ansible.builtin.systemd:
+    name: zigbee2mqtt
+    enabled: true
+    state: started
+    daemon_reload: true

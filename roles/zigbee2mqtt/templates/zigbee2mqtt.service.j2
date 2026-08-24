@@ -1,0 +1,15 @@
+[Unit]
+Description=zigbee2mqtt
+After=network.target
+
+[Service]
+ExecStart=/bin/pnpm start
+WorkingDirectory=/opt/zigbee2mqtt
+StandardOutput=inherit
+StandardError=inherit
+Restart=on-failure
+RestartSec=10s
+User=root
+
+[Install]
+WantedBy=multi-user.target
