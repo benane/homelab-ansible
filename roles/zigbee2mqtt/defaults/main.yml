@@ -1,0 +1,6 @@
+z2m_mqtt_server: "mqtt://172.16.10.201:1883"
+z2m_base_topic: "slzb06-mg26u"
+z2m_serial_port: "tcp://10.13.20.10:6638"
+z2m_serial_adapter: "ezsp"
+z2m_homeassistant: true
+z2m_frontend_enabled: true

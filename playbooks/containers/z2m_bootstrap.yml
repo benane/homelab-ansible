@@ -25,6 +25,7 @@
         netif:
           net0: "name=eth0,bridge=vmbr0,ip=172.16.10.202/24,gw=172.16.10.1"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
+        onboot: true
       register: result
 
     - name: Container starten

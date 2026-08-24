@@ -1,0 +1,17 @@
+version: 5
+homeassistant:
+  enabled: {{ z2m_homeassistant | lower }}
+  discovery_topic: homeassistant
+frontend:
+  enabled: {{ z2m_frontend_enabled | lower }}
+mqtt:
+  base_topic: '{{ z2m_base_topic }}'
+  server: '{{ z2m_mqtt_server }}'
+  user: '{{ vault_mosquitto_user }}'
+  password: '{{ vault_mosquitto_password }}'
+  keepalive: 60
+  reject_unauthorized: true
+  version: 4
+serial:
+  port: '{{ z2m_serial_port }}'
+  adapter: '{{ z2m_serial_adapter }}'

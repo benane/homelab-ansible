@@ -34,9 +34,10 @@
     version: master
     depth: 1
 
-- name: pnpm aktivieren (via corepack, in Node.js eingebaut)
-  ansible.builtin.command: corepack enable
-  changed_when: false   # corepack enable ist selbst nicht idempotent meldbar, daher hier bewusst nie "changed"
+- name: pnpm installieren
+  ansible.builtin.command: npm install -g pnpm
+  args:
+    creates: /usr/bin/pnpm
 
 - name: Abhängigkeiten installieren
   ansible.builtin.command: pnpm install --frozen-lockfile
