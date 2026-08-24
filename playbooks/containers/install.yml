@@ -1,6 +1,0 @@
----
-- name: Service-Rolle anwenden
-  hosts: "{{ target_host }}"
-  tasks:
-    - ansible.builtin.include_role:
-        name: "{{ hostvars[target_host].container_role }}"

@@ -1,5 +1,20 @@
 ---
-- import_playbook: containers/bootstrap.yml
-- import_playbook: 00_bootstrap.yml
-- import_playbook: 01_security_hardening.yml 
-- import_playbook: containers/install.yml
+- import_playbook: containers/bootstrap.yml   # hosts: localhost (Proxmox-API)
+
+- name: Warten, bis SSH erreichbar ist
+  hosts: "{{ target_host }}"
+  gather_facts: false
+  tasks:
+    - ansible.builtin.wait_for_connection:
+        timeout: 60
+
+- name: Container einrichten
+  hosts: "{{ target_host }}"
+  become: true
+  roles:
+    - common
+    - hardening
+  tasks:
+    - name: Service-Rolle anwenden
+      ansible.builtin.include_role:
+        name: "{{ hostvars[target_host].container_role }}"
