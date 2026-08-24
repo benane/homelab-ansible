@@ -1,0 +1,38 @@
+---
+- hosts: localhost
+  gather_facts: false
+  become: false
+  vars:
+    container_ip: "{{ hostvars[target_host].ansible_host }}"
+    container_vmid: "{{ container_ip.split('.')[-1] }}"
+    container_ostemplate: 'local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst'
+    container_pool: ansible-automation
+  module_defaults:
+    community.proxmox.proxmox:
+      api_host: "{{ proxmox_api_host }}"
+      api_user: "{{ proxmox_api_user }}"
+      api_token_id: "{{ proxmox_api_token_id }}"
+      api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+      validate_certs: false
+  tasks:
+    - name: Container erstellen
+      community.proxmox.proxmox:
+        node: Alderaan
+        vmid: "{{ container_vmid }}"
+        hostname: "{{ target_host }}"
+        ostemplate: "{{ hostvars[target_host].container_ostemplate }}"
+        cmode: console
+        pool: "{{ hostvars[target_host].container_pool }}"
+        disk: "local-lvm:{{ hostvars[target_host].container_disk }}"
+        cores: "{{ hostvars[target_host].container_cores }}"
+        memory: "{{ hostvars[target_host].container_memory }}"
+        netif:
+          net0: "name=eth0,bridge=vmbr0,ip={{ container_ip }}/24,gw=172.16.10.1"
+        pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
+        onboot: true
+      register: result
+
+    - name: Container starten
+      community.proxmox.proxmox:
+        vmid: "{{ container_vmid }}"
+        state: started

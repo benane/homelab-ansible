@@ -1,0 +1,5 @@
+---
+- import_playbook: containers/bootstrap.yml
+- import_playbook: 00_bootstrap.yml
+- import_playbook: 01_hardening.yml 
+- import_playbook: containers/install.yml

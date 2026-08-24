@@ -4,3 +4,4 @@ z2m_serial_port: "tcp://10.13.20.10:6638"
 z2m_serial_adapter: "ember"
 z2m_homeassistant: true
 z2m_frontend_enabled: true
+z2m_node_major_version: "26"

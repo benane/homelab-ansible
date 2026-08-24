@@ -1,5 +1,0 @@
----
-- name: Setup NodeJs
-  hosts: lxc-zigbee2mqtt
-  roles:
-    - zigbee2mqtt
