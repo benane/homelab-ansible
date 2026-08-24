@@ -20,9 +20,9 @@
         node: Alderaan
         vmid: "{{ container_vmid }}"
         hostname: "{{ target_host }}"
-        ostemplate: "{{ hostvars[target_host].container_ostemplate }}"
+        ostemplate: "{{ container_ostemplate }}"
         cmode: console
-        pool: "{{ hostvars[target_host].container_pool }}"
+        pool: "{{ container_pool }}"
         disk: "local-lvm:{{ hostvars[target_host].container_disk }}"
         cores: "{{ hostvars[target_host].container_cores }}"
         memory: "{{ hostvars[target_host].container_memory }}"

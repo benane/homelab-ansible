@@ -2,4 +2,4 @@
 - name: SSH Daemon neu starten
   ansible.builtin.systemd:
     name: ssh
-    state: reloaded
+    state: restarted
