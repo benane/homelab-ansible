@@ -1,4 +1,12 @@
 ---
+# container_site.yml — kompletter Lifecycle für einen neuen LXC-Container.
+# 1. Container per Proxmox-API anlegen (containers/bootstrap.yml)
+# 2. Warten, bis er per SSH erreichbar ist
+# 3. Grundkonfiguration + Hardening anwenden (gleiche Rollen wie site.yml)
+# 4. Service-Rolle anwenden, die in hostvars[target_host].container_role definiert ist
+#
+# Aufruf: ansible-playbook playbooks/container_site.yml -e target_host=lxc-zigbee2mqtt
+
 - import_playbook: containers/bootstrap.yml   # hosts: localhost (Proxmox-API)
 
 - name: Warten, bis SSH erreichbar ist
