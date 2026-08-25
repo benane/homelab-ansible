@@ -30,5 +30,5 @@
 
     - name: Container starten
       community.proxmox.proxmox:
-        vmid: "{{ container_vmid }}"
+        vmid: "{{ hostvars[target_host].container_vmid }}"
         state: started
