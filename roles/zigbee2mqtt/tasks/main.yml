@@ -31,8 +31,8 @@
   ansible.builtin.git:
     repo: https://github.com/Koenkk/zigbee2mqtt.git
     dest: /opt/zigbee2mqtt
-    version: master
-    depth: 1
+    version: "{{ z2m_version }}"
+  register: z2m_repo
 
 - name: pnpm installieren
   ansible.builtin.command: npm install -g pnpm
@@ -43,7 +43,7 @@
   ansible.builtin.command: pnpm install --frozen-lockfile
   args:
     chdir: /opt/zigbee2mqtt
-    creates: /opt/zigbee2mqtt/node_modules
+  when: z2m_repo.changed
 
 - name: Datenverzeichnis anlegen
   ansible.builtin.file:

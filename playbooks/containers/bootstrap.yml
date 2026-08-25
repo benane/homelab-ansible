@@ -35,6 +35,10 @@
         netif:
           net0: "name=eth0,bridge=vmbr0,ip={{ ct_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ ct_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
+        tags: >-
+          {{ container_default_tags
+            + [hostvars[target_host].container_role] | default([])
+            + hostvars[target_host].container_tags | default([]) }}
         onboot: true
       register: result
 
