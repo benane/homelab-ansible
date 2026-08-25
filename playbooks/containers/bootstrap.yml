@@ -3,9 +3,9 @@
   gather_facts: false
   become: false
   vars:
-    container_ip: "{{ hostvars[target_host].ansible_host }}"
-    container_vmid: "{{ container_ip.split('.')[-1] }}"
-    container_ostemplate: 'local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst'
+    container_ip: "172.16.10.{{ container_vmid }}"
+    container_vmid: "{{ hostvars[target_host].container_vmid }}"
+    container_ostemplate: "{{ proxmox_default_template }}"
     container_pool: ansible-automation
   module_defaults:
     community.proxmox.proxmox:
@@ -18,7 +18,7 @@
   tasks:
     - name: Container erstellen
       community.proxmox.proxmox:
-        node: Alderaan
+        node: "{{ proxmox_default_node }}"
         vmid: "{{ container_vmid }}"
         hostname: "{{ target_host }}"
         ostemplate: "{{ container_ostemplate }}"
@@ -28,7 +28,7 @@
         cores: "{{ hostvars[target_host].container_cores }}"
         memory: "{{ hostvars[target_host].container_memory }}"
         netif:
-          net0: "name=eth0,bridge=vmbr0,ip={{ container_ip }}/24,gw=172.16.10.1,hwaddr={{ hostvars[target_host].container_mac }}"
+          net0: "name=eth0,bridge=vmbr0,ip={{ container_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ hostvars[target_host].container_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
         onboot: true
       register: result
