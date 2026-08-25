@@ -2,6 +2,16 @@
 - hosts: localhost
   gather_facts: false
   become: false
+  vars:
+    ct: "{{ hostvars[target_host] }}"
+    ct_vmid: "{{ ct.container_vmid }}"
+    ct_node: "{{ ct.container_node | default(proxmox_default_node) }}"
+    ct_ip: "{{ ct.ansible_host }}"
+    ct_mac: "{{ ct.container_mac }}
+    ct_disk: "{{ ct.container_disk | default(proxmox_default_disk) }}"
+    ct_cores: "{{ ct.container_cores | default(proxmox_default_cores) }}"
+    ct_memory: "{{ ct.container_memory | default(proxmox_default_memory) }}"
+    ct_template: "{{ ct.container_ostemplate | default(proxmox_default_template) }}"
   module_defaults:
     community.proxmox.proxmox:
       api_host: "{{ proxmox_api_host }}"
@@ -13,22 +23,22 @@
   tasks:
     - name: Container erstellen
       community.proxmox.proxmox:
-        node: "{{ hostvars[target_host].container_node | default(proxmox_default_node) }}"
-        vmid: "{{ hostvars[target_host].container_vmid }}"
+        node: "{{ ct_node }}"
+        vmid: "{{ ct_vmid }}"
         hostname: "{{ target_host }}"
-        ostemplate: "{{  hostvars[target_host].container_ostemplate | default(proxmox_default_template) }}"
+        ostemplate: "{{ ct_template }}"
         cmode: console
         pool: "{{ proxmox_default_pool }}"
-        disk: "local-lvm:{{ hostvars[target_host].container_disk | default(proxmox_default_disk) }}"
-        cores: "{{ hostvars[target_host].container_cores | default(proxmox_default_cores) }}"
-        memory: "{{ hostvars[target_host].container_memory | default(proxmox_default_memory) }}"
+        disk: "local-lvm:{{ ct_disk) }}"
+        cores: "{{ ct_cores) }}"
+        memory: "{{ ct_memory) }}"
         netif:
-          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[target_host].ansible_host }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ hostvars[target_host].container_mac }}"
+          net0: "name=eth0,bridge=vmbr0,ip={{ ct_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ ct_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
         onboot: true
       register: result
 
     - name: Container starten
       community.proxmox.proxmox:
-        vmid: "{{ hostvars[target_host].container_vmid }}"
+        vmid: "{{ ct_vmid }}"
         state: started
