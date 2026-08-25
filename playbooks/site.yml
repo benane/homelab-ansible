@@ -1,8 +1,8 @@
 ---
 # site.yml - Das Gesamt-Setup für das komplette Homelab
-- import_playbook: playbooks/00_bootstrap.yml
-- import_playbook: playbooks/01_security_hardening.yml
-- import_playbook: playbooks/02_proxmox_setup.yml
-#- import_playbook: playbooks/03_vm_setup.yml
-#- import_playbook: playbooks/04_docker_hosts.yml
-- import_playbook: playbooks/05_network_setup.yml
+- import_playbook: 00_bootstrap.yml
+- import_playbook: 01_security_hardening.yml
+- import_playbook: 02_proxmox_setup.yml
+#- import_playbook: 03_vm_setup.yml
+#- import_playbook: 04_docker_hosts.yml
+#- import_playbook: 05_network_setup.yml
