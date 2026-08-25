@@ -2,10 +2,6 @@
 - hosts: localhost
   gather_facts: false
   become: false
-  vars:
-    container_vmid: "{{ hostvars[target_host].container_vmid }}"
-    container_ip: "172.16.10.{{ container_vmid }}"
-    container_pool: "{{ proxmox_default_pool }}"
   module_defaults:
     community.proxmox.proxmox:
       api_host: "{{ proxmox_api_host }}"
@@ -18,16 +14,16 @@
     - name: Container erstellen
       community.proxmox.proxmox:
         node: "{{ hostvars[target_host].container_node | default(proxmox_default_node) }}"
-        vmid: "{{ container_vmid }}"
+        vmid: "{{ hostvars[target_host].container_vmid }}"
         hostname: "{{ target_host }}"
         ostemplate: "{{  hostvars[target_host].container_ostemplate | default(proxmox_default_template) }}"
         cmode: console
-        pool: "{{ container_pool }}"
+        pool: "{{ proxmox_default_pool }}"
         disk: "local-lvm:{{ hostvars[target_host].container_disk | default(proxmox_default_disk) }}"
         cores: "{{ hostvars[target_host].container_cores | default(proxmox_default_cores) }}"
         memory: "{{ hostvars[target_host].container_memory | default(proxmox_default_memory) }}"
         netif:
-          net0: "name=eth0,bridge=vmbr0,ip={{ container_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ hostvars[target_host].container_mac }}"
+          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[target_host].container_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ hostvars[target_host].container_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
         onboot: true
       register: result
