@@ -37,13 +37,20 @@
         netif:
           net0: "name=eth0,bridge=vmbr0,ip={{ ct_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ ct_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
-        tags: >-
-          {{ container_default_tags
-            + ([ct.container_role] if 'container_role' in ct else [])
-            + (ct.container_tags | default([])) }}
         onboot: true
 
     - name: Container starten
       community.proxmox.proxmox:
         vmid: "{{ ct_vmid }}"
         state: started
+
+    - name: Tags setzen
+      community.proxmox.proxmox:
+        node: "{{ ct_node }}"
+        vmid: "{{ ct_vmid }}"
+        hostname: "{{ ct.system_hostname | default(target_host) }}"
+        cmode: console
+        tags: >-
+          {{ container_default_tags
+            + ([ct.container_role] if 'container_role' in ct else [])
+            + (ct.container_tags | default([])) }}
