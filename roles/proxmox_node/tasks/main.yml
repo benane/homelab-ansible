@@ -13,7 +13,7 @@
 - name: Proxmox Subscription-Nag Banner entfernen
   ansible.builtin.replace:
     path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
-    regexp: "res\.data\.status\.toLowerCase\(\) !== 'active'"
+    regexp: 'res\.data\.status\.toLowerCase\(\) !== ''active'''
     replace: "false"
     backup: true
   notify: Restart PVE Proxy
