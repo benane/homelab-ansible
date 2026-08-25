@@ -12,6 +12,8 @@
     ct_cores: "{{ ct.container_cores | default(proxmox_default_cores) }}"
     ct_memory: "{{ ct.container_memory | default(proxmox_default_memory) }}"
     ct_template: "{{ ct.container_ostemplate | default(proxmox_default_template) }}"
+    container_default_tags:
+      - ansible
   module_defaults:
     community.proxmox.proxmox:
       api_host: "{{ proxmox_api_host }}"
@@ -25,20 +27,20 @@
       community.proxmox.proxmox:
         node: "{{ ct_node }}"
         vmid: "{{ ct_vmid }}"
-        hostname: "{{ target_host }}"
+        hostname: "{{ ct.system_hostname | default(target_host) }}"
         ostemplate: "{{ ct_template }}"
         cmode: console
         pool: "{{ proxmox_default_pool }}"
-        disk: "local-lvm:{{ ct_disk) }}"
-        cores: "{{ ct_cores) }}"
-        memory: "{{ ct_memory) }}"
+        disk: "local-lvm:{{ ct_disk }}"
+        cores: "{{ ct_cores }}"
+        memory: "{{ ct_memory }}"
         netif:
           net0: "name=eth0,bridge=vmbr0,ip={{ ct_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ ct_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
         tags: >-
           {{ container_default_tags
-            + [hostvars[target_host].container_role] | default([])
-            + hostvars[target_host].container_tags | default([]) }}
+            + ([ct.container_role] if 'container_role' in ct else [])
+            + (ct.container_tags | default([])) }}
         onboot: true
       register: result
 
