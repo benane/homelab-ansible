@@ -23,7 +23,7 @@
         cores: "{{ hostvars[target_host].container_cores | default(proxmox_default_cores) }}"
         memory: "{{ hostvars[target_host].container_memory | default(proxmox_default_memory) }}"
         netif:
-          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[target_host].container_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ hostvars[target_host].container_mac }}"
+          net0: "name=eth0,bridge=vmbr0,ip={{ hostvars[target_host].ansible_host }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ hostvars[target_host].container_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
         onboot: true
       register: result
