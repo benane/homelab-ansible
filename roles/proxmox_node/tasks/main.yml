@@ -14,6 +14,6 @@
   ansible.builtin.replace:
     path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
     regexp: 'res\.data\.status\.toLowerCase\(\) !== ''active'''
-    replace: false
+    replace: "false"
     backup: true
   notify: Restart PVE Proxy
