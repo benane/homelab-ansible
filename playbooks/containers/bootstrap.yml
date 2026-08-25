@@ -7,7 +7,7 @@
     ct_vmid: "{{ ct.container_vmid }}"
     ct_node: "{{ ct.container_node | default(proxmox_default_node) }}"
     ct_ip: "{{ ct.ansible_host }}"
-    ct_mac: "{{ ct.container_mac }}
+    ct_mac: "{{ ct.container_mac }}"
     ct_disk: "{{ ct.container_disk | default(proxmox_default_disk) }}"
     ct_cores: "{{ ct.container_cores | default(proxmox_default_cores) }}"
     ct_memory: "{{ ct.container_memory | default(proxmox_default_memory) }}"
