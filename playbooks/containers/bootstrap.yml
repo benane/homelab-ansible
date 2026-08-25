@@ -17,15 +17,15 @@
   tasks:
     - name: Container erstellen
       community.proxmox.proxmox:
-        node: "{{ hostvars[target_host].container_node | proxmox_default_node }}"
+        node: "{{ hostvars[target_host].container_node | default(proxmox_default_node) }}"
         vmid: "{{ container_vmid }}"
         hostname: "{{ target_host }}"
-        ostemplate: "{{  hostvars[target_host].container_ostemplate | proxmox_default_template }}"
+        ostemplate: "{{  hostvars[target_host].container_ostemplate | default(proxmox_default_template) }}"
         cmode: console
         pool: "{{ container_pool }}"
-        disk: "local-lvm:{{ hostvars[target_host].container_disk | proxmox_default_disk }}"
-        cores: "{{ hostvars[target_host].container_cores | proxmox_default_cores }}"
-        memory: "{{ hostvars[target_host].container_memory | proxmox_default_memory }}"
+        disk: "local-lvm:{{ hostvars[target_host].container_disk | default(proxmox_default_disk) }}"
+        cores: "{{ hostvars[target_host].container_cores | default(proxmox_default_cores) }}"
+        memory: "{{ hostvars[target_host].container_memory | default(proxmox_default_memory) }}"
         netif:
           net0: "name=eth0,bridge=vmbr0,ip={{ container_ip }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ hostvars[target_host].container_mac }}"
         pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
