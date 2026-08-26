@@ -26,6 +26,17 @@ ansible-playbook playbooks/container_site.yml -e target_host=lxc-zigbee2mqtt -u 
 
 Ab dem zweiten Lauf greift wieder der Default aus `ansible.cfg` (`remote_user = ansible`) – `-u root` nicht mehr nötig. `ansible_user: root` sollte deshalb **nicht** dauerhaft in `hosts.yml` stehen bleiben.
 
+### Hinweise für den Betrieb
+
+**Mosquitto komplett neu aufsetzen:** Beim Neubau des mosquitto-Containers gehen alle persistierten (retained) MQTT-Nachrichten verloren – u.a. die Home-Assistant-Discovery-Configs und der letzte bekannte Gerätezustand. Danach müssen alle MQTT-Clients (aktuell: zigbee2mqtt) manuell neu gestartet werden, damit sie sich neu verbinden und alles erneut publizieren:
+
+```bash
+ssh ansible@172.16.10.202
+sudo systemctl restart zigbee2mqtt
+```
+
+Home-Assistant-Geräte sollten danach innerhalb weniger Sekunden wieder "available" werden.
+
 ToDo:
 - backup restore
 - node-exporter proxmox: aktuell über API token gelöst, node-exporter dort installieren oder in den proxmox setup schieben?
