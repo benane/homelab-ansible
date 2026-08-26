@@ -6,3 +6,4 @@ z2m_homeassistant: true
 z2m_frontend_enabled: true
 z2m_node_major_version: "26"
 z2m_version: "2.13.0"
+z2m_channel: 15

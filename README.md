@@ -44,3 +44,4 @@ ToDo:
 - Wrapper-Script für Container-Erstellung (kapselt `-e target_host=` und beim ersten Lauf `-u root`, um Tippfehler zu vermeiden)
 - `container_vmid` dynamisch ermitteln lassen (nächste freie ID ab 201), statt sie fest in `hosts.yml` vorzugeben
 - eventuell Wechsel von Uptime Kuma auf https://gatus.io (Config als YAML statt API/UI – passt besser zu Ansible)
+- zigbee2mqtt läuft noch mit dem eingebauten Standard-`network_key`/`ext_pan_id` (nie individualisiert) – echte Zufallswerte generieren (`network_key` in den Vault) und in der Rolle setzen. Achtung: erfordert Neupairing aller Zigbee-Geräte, daher auf einen Termin mit Zeit dafür legen
