@@ -1,0 +1,6 @@
+---
+- name: mosquitto neu starten
+  ansible.builtin.systemd:
+    name: mosquitto
+    state: restarted
+    daemon_reload: true

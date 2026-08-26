@@ -7,8 +7,8 @@ frontend:
 mqtt:
   base_topic: '{{ z2m_base_topic }}'
   server: '{{ z2m_mqtt_server }}'
-  user: '{{ vault_mosquitto_user }}'
-  password: '{{ vault_mosquitto_password }}'
+  user: 'zigbee'
+  password: '{{ vault_mosquitto_users.zigbee }}'
   keepalive: 60
   reject_unauthorized: true
   version: 4

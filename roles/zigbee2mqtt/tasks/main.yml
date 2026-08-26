@@ -62,9 +62,7 @@
     dest: /etc/systemd/system/zigbee2mqtt.service
   notify: zigbee2mqtt neu starten
 
-- name: zigbee2mqtt aktivieren und starten
+- name: zigbee2mqtt aktivieren
   ansible.builtin.systemd:
     name: zigbee2mqtt
     enabled: true
-    state: started
-    daemon_reload: true

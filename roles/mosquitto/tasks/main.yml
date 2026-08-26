@@ -1,0 +1,41 @@
+---
+- name: Mosquitto installieren
+  ansible.builtin.apt:
+    name:
+      - mosquitto
+    state: present
+
+- name: Default Konfiguration einspielen
+  ansible.builtin.template:
+    src: default.conf.j2
+    dest: /etc/mosquitto/conf.d/ansible.conf
+  notify: mosquitto neu starten
+
+- name: Passwort-Datei anlegen falls nicht vorhanden
+  ansible.builtin.file:
+    path: /etc/mosquitto/passwd
+    state: touch
+    owner: mosquitto
+    group: mosquitto
+    mode: '0600'
+    modification_time: preserve
+    access_time: preserve
+
+- name: Mosquitto-User anlegen
+  ansible.builtin.command:
+    cmd: "mosquitto_passwd -b /etc/mosquitto/passwd {{ item.key }} {{ item.value }}"
+  loop: "{{ vault_mosquitto_users | dict2items }}"
+  no_log: true
+  notify: mosquitto neu starten
+
+- name: Berechtigungen der Passwort-Datei sicherstellen
+  ansible.builtin.file:
+    path: /etc/mosquitto/passwd
+    owner: mosquitto
+    group: mosquitto
+    mode: '0600'
+
+- name: Mosquitto aktivieren
+  ansible.builtin.systemd:
+    name: mosquitto
+    enabled: true
