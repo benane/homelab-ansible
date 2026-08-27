@@ -54,6 +54,7 @@
   ansible.builtin.template:
     src: configuration.yaml.j2
     dest: /opt/zigbee2mqtt/data/configuration.yaml
+    backup: true
   notify: zigbee2mqtt neu starten
 
 - name: systemd-Unit einspielen

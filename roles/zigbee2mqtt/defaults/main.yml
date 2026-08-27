@@ -7,3 +7,4 @@ z2m_frontend_enabled: true
 z2m_node_major_version: "26"
 z2m_version: "2.13.0"
 z2m_channel: 15
+z2m_ext_pan_id: [21, 158, 181, 122, 97, 129, 218, 18]
