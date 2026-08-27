@@ -1,0 +1,27 @@
+---
+- name: Cloudflare-Repo eintragen
+  ansible.builtin.deb822_repository:
+    name: cloudflared
+    types: deb
+    uris: "https://pkg.cloudflare.com/cloudflared"
+    suites: any
+    components: main
+    signed_by: "https://pkg.cloudflare.com/cloudflare-main.gpg"
+  register: cloudflared_repo
+
+- name: APT-Cache aktualisieren
+  ansible.builtin.apt:
+    update_cache: true
+  when: cloudflared_repo.changed
+
+- name: cloudflared installieren
+  ansible.builtin.apt:
+    name:
+      - cloudflared
+    state: present
+
+- name: cloudflared als Service registrieren (Tunnel-Token)
+  ansible.builtin.command:
+    cmd: "cloudflared service install {{ vault_cloudflared_tunnel_token }}"
+    creates: /etc/systemd/system/cloudflared.service
+  no_log: true
