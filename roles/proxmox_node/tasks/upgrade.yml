@@ -1,0 +1,11 @@
+---
+- name: Full upgrade durchführen
+  ansible.builtin.apt:
+    upgrade: full
+    update_cache: true
+  register: pve_full_upgrade
+
+- name: Reboot durchführen, falls Kernel-Update
+  ansible.builtin.reboot:
+    msg: "Reboot nach Full-Upgrade (Ansible)"
+  when: pve_full_upgrade.changed

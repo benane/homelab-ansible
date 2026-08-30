@@ -1,0 +1,33 @@
+---
+# -----------------------------------------------------------------------------
+# ANSIBLE SERVICE-USER SETUP
+# -----------------------------------------------------------------------------
+- name: Gruppe 'ansible' anlegen
+  ansible.builtin.group:
+    name: ansible
+    state: present
+
+- name: Service-User 'ansible' anlegen
+  ansible.builtin.user:
+    name: ansible
+    group: ansible
+    groups: sudo
+    append: true
+    shell: "{{ common_default_shell }}"
+    state: present
+    create_home: true
+
+- name: Sudoers-Eintrag für 'ansible' ohne Passworteingabe anlegen
+  ansible.builtin.copy:
+    content: "ansible ALL=(ALL) NOPASSWD:ALL\n"
+    dest: /etc/sudoers.d/ansible
+    owner: root
+    group: root
+    mode: '0440'
+    validate: 'visudo -cf %s'
+
+- name: SSH-Public-Key dynamisch aus ansible.cfg hinterlegen
+  ansible.posix.authorized_key:
+    user: ansible
+    state: present
+    key: "{{ lookup('file', (ansible_private_key_file | expanduser) + '.pub') }}"

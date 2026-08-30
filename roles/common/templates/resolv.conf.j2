@@ -1,0 +1,7 @@
+# Managed by Ansible – nicht von Hand editieren
+{% if dns_search is defined %}
+search {{ dns_search }}
+{% endif %}
+{% for s in dns_servers %}
+nameserver {{ s }}
+{% endfor %}

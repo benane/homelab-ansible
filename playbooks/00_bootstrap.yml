@@ -3,5 +3,11 @@
   hosts: bare_metal, virtual_machines
   gather_facts: true
   become: true
+  pre_tasks:
+    - name: PVE-Repos umstellen, bevor common das erste apt update macht
+      ansible.builtin.include_role:
+        name: proxmox_node
+        tasks_from: repos.yml
+      when: "'proxmox_nodes' in group_names"
   roles:
     - common

@@ -1,0 +1,4 @@
+ansible_user: root
+ansible_python_interpreter: /usr/bin/python3
+dns_servers: "{{ groups['dns_resolvers'] | map('extract', hostvars, 'ansible_host') | list }}"
+dns_search: lan

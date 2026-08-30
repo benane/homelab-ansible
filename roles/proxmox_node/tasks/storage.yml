@@ -1,0 +1,14 @@
+---
+- name: Prüfen, ob ZFS-Pool nvme-zfs existiert
+  ansible.builtin.command: zpool list -H -o name nvme-zfs
+  register: zpool_nvme
+  changed_when: false
+  failed_when: false
+
+- name: ZFS-Pool nvme-zfs anlegen
+  ansible.builtin.command: >-
+    zpool create -o ashift=12 -o autotrim=on -O compression=on -O atime=off
+    nvme-zfs /dev/disk/by-id/{{ nvme_zfs_disk }}
+  when:
+    - nvme_zfs_disk is defined
+    - zpool_nvme.rc != 0
