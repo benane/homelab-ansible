@@ -8,3 +8,13 @@
       #zfs-zed
     state: present
     update_cache: true
+
+- name: Nutzlose Pakete auf Consumer-HW entfernen
+  ansible.builtin.apt:
+    name:
+      - openipmi
+      - ipmitool
+    state: absent
+    purge: true
+
+#alls apt meckert, es sei eine Abhängigkeit – dann stattdessen systemd: name=openipmi masked=true

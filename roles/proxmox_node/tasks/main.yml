@@ -4,4 +4,6 @@
 - import_tasks: upgrade.yml
 - import_tasks: nag_banner.yml
 - import_tasks: packages.yml
+- import_tasks: pve_exporter.yml
+  when: inventory_hostname == groups['proxmox_nodes'] | first
 - import_tasks: storage.yml

@@ -11,9 +11,9 @@
   changed_when: false
   failed_when: false
 
-- name: qnetd-Client-Zertifikate vorhanden?
+- name: qnetd-Client-DB vorhanden?
   ansible.builtin.stat:
-    path: /etc/corosync/qdevice/net/nssdb/qnetd-cacert.crt
+    path: /etc/corosync/qdevice/net/nssdb/cert9.db
   register: qdevice_certs
 
 - name: QDevice-Dienst aktivieren (nur wenn konfiguriert + Zertifikate da)
