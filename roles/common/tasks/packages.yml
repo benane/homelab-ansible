@@ -1,19 +1,8 @@
 ---
-# -----------------------------------------------------------------------------
-# BASE PACKAGES
-# -----------------------------------------------------------------------------
 - name: Grundlegende Systempakete installieren
   ansible.builtin.apt:
     name: "{{ common_base_packages }}"
     state: present
     update_cache: true
   when: ansible_facts['os_family'] == "Debian"
-
-# -----------------------------------------------------------------------------
-# ENABLE SERVICES
-# -----------------------------------------------------------------------------
-- name: Node Exporter Service aktivieren und starten
-  ansible.builtin.systemd:
-    name: prometheus-node-exporter
-    state: started
-    enabled: true
+  

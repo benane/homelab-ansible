@@ -1,0 +1,4 @@
+---
+- include_tasks: ssh_mesh.yml
+- include_tasks: qdevice.yml
+- include_tasks: zfs_entry.yml

@@ -1,0 +1,10 @@
+---
+- name: Hardware-/Diagnose-Pakete installieren
+  ansible.builtin.apt:
+    name:
+      - lm-sensors
+      #nvme-cli
+      #ethtool
+      #zfs-zed
+    state: present
+    update_cache: true

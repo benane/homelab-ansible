@@ -2,10 +2,16 @@
 # site.yml — Einstiegspunkt für bereits existierende Maschinen (Bare-Metal-Nodes, laufende VMs).
 # Voraussetzung: Host ist in der Inventory und per SSH erreichbar.
 # Deckt Grundkonfiguration, Hardening, Proxmox-Setup und Netzwerk ab.
+- name: Guard – nie ungebremst
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - ansible.builtin.assert:
+        that: ansible_limit is defined
+        fail_msg: "site.yml immer mit --limit fahren (--limit all für alles, bewusst)."
 
 - import_playbook: 00_bootstrap.yml
 - import_playbook: 01_security_hardening.yml
 - import_playbook: 02_proxmox_setup.yml
-#- import_playbook: 03_vm_setup.yml
-#- import_playbook: 04_docker_hosts.yml
-#- import_playbook: 05_network_setup.yml
+- import_playbook: 03_proxmox_cluster.yml
+- import_playbook: 06_monitoring.yml

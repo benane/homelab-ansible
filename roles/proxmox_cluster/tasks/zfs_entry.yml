@@ -1,0 +1,14 @@
+---
+- name: Storage-Konfig einlesen
+  ansible.builtin.command: pvesm status --storage nvme-zfs
+  register: pvesm_nvme
+  changed_when: false
+  failed_when: false
+  run_once: true
+
+- name: nvme-zfs als Storage eintragen (vorerst nur Corellia)
+  ansible.builtin.command: >-
+    pvesm add zfspool nvme-zfs --pool nvme-zfs --nodes Corellia
+    --content images,rootdir
+  when: pvesm_nvme.rc != 0
+  run_once: true

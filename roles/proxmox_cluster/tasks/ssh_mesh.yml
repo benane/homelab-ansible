@@ -1,0 +1,21 @@
+---
+- name: Root-Pubkey der Node einlesen
+  ansible.builtin.slurp:
+    src: /root/.ssh/id_rsa.pub
+  register: pve_root_pubkey
+
+- name: Prüfen, welche Fremd-Root-Keys fehlen
+  ansible.builtin.command:
+    cmd: grep -qxF -- "{{ hostvars[item].pve_root_pubkey.content | b64decode | trim }}" /root/.ssh/authorized_keys
+  loop: "{{ groups['proxmox_nodes'] | difference([inventory_hostname]) }}"
+  when: hostvars[item].pve_root_pubkey is defined      # <-- neu
+  register: pve_key_present
+  changed_when: false
+  failed_when: false
+
+- name: Fehlende Root-Keys anhängen (pmxcfs-safe, plain append)
+  ansible.builtin.shell:
+    cmd: printf '%s\n' "{{ hostvars[item.item].pve_root_pubkey.content | b64decode | trim }}" >> /root/.ssh/authorized_keys
+  loop: "{{ pve_key_present.results }}"
+  loop_control: { label: "{{ item.item }}" }
+  when: (item.rc | default(0)) != 0                    # <-- übersprungene Items haben kein rc -> 0 -> skip

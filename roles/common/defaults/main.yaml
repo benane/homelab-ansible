@@ -7,7 +7,6 @@ common_base_packages:
   - git
   - htop
   - python3
-  - prometheus-node-exporter
 
 # Standard-Shell für neue User
 common_default_shell: /bin/bash

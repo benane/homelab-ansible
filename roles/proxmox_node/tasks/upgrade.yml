@@ -5,7 +5,11 @@
     update_cache: true
   register: pve_full_upgrade
 
-- name: Reboot durchführen, falls Kernel-Update
+- name: Reboot nach Full-Upgrade
   ansible.builtin.reboot:
-    msg: "Reboot nach Full-Upgrade (Ansible)"
-  when: pve_full_upgrade.changed
+  when: pve_full_upgrade.changed and (pve_allow_reboot | default(false) | bool)
+
+- name: Hinweis, falls Reboot aussteht
+  ansible.builtin.debug:
+    msg: "Kernel/Pakete aktualisiert – Reboot NICHT ausgeführt. Bewusst mit -e pve_allow_reboot=true nachholen."
+  when: pve_full_upgrade.changed and not (pve_allow_reboot | default(false) | bool)

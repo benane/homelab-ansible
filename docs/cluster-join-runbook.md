@@ -32,18 +32,26 @@ bleibt erhalten.
 an. Alderaan hat `PasswordAuthentication no` (hardening-Rolle) → Corellias
 root-Key muss in Alderaans cluster-weite `authorized_keys`.
 
-Vom Control-Node (Mac):
+`/etc/pve` ist pmxcfs (FUSE) – das `authorized_key`-Modul scheitert dort an
+`chmod`/`chown` (`EPERM`). Ein simples Anhängen funktioniert. Vom Control-Node (Mac):
 
 ```bash
+# Corellias root-Pubkey holen
 ansible pve-node02 -u root -m fetch \
   -a "src=/root/.ssh/id_rsa.pub dest=/tmp/corellia_root.pub flat=yes"
 
-ansible pve-node01 -u root -m ansible.posix.authorized_key \
-  -a "user=root path=/etc/pve/priv/authorized_keys manage_dir=false key='$(cat /tmp/corellia_root.pub)'"
-```
+# auf Alderaan ablegen (nach /root, normales ext4)
+ansible pve-node01 -u root -m copy \
+  -a "src=/tmp/corellia_root.pub dest=/root/corellia_root.pub mode=0600"
 
-(Falls das Modul mit der pmxcfs-Datei zickt: stattdessen `lineinfile` /
-`blockinfile` auf denselben Pfad.)
+# anhängen, wenn noch nicht drin (idempotent) – /root/.ssh/authorized_keys ist
+# ein Symlink auf /etc/pve/priv/authorized_keys, plain append geht durch
+ansible pve-node01 -u root -m shell \
+  -a "grep -qFf /root/corellia_root.pub /root/.ssh/authorized_keys || cat /root/corellia_root.pub >> /root/.ssh/authorized_keys"
+
+# aufräumen
+ansible pve-node01 -u root -m file -a "path=/root/corellia_root.pub state=absent"
+```
 
 Test:
 ```bash

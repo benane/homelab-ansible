@@ -2,6 +2,7 @@
 - name: Proxmox Nodes einrichten
   hosts: proxmox_nodes
   become: true
+  serial: 1
   
   roles:
     - proxmox_node

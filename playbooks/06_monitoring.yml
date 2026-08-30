@@ -1,0 +1,7 @@
+---
+- name: Monitoring einrichten
+  hosts: monitoring_targets
+  become: true
+  
+  roles:
+    - node_exporter

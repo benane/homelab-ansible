@@ -1,0 +1,15 @@
+---
+- name: Node Exporter installieren
+  ansible.builtin.apt:
+    name: prometheus-node-exporter
+    state: present
+    update_cache: true
+  when: ansible_facts['os_family'] == "Debian"
+
+- name: Node Exporter Service aktivieren und starten
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    state: started
+    enabled: true
+
+# evtl später collector tuning, firewall port für victoriametrics als defaults/main.yml + template

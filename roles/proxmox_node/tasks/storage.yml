@@ -5,10 +5,38 @@
   changed_when: false
   failed_when: false
 
-- name: ZFS-Pool nvme-zfs anlegen
-  ansible.builtin.command: >-
-    zpool create -o ashift=12 -o autotrim=on -O compression=on -O atime=off
-    nvme-zfs /dev/disk/by-id/{{ nvme_zfs_disk }}
+- name: nvme-zfs anlegen (mit Vorab-Prüfung der Platte)
   when:
     - nvme_zfs_disk is defined
     - zpool_nvme.rc != 0
+  block:
+
+    - name: Zielplatte muss existieren
+      ansible.builtin.stat:
+        path: "/dev/disk/by-id/{{ nvme_zfs_disk }}"
+      register: nvme_disk
+
+    - name: Abbruch – Zielplatte nicht gefunden
+      ansible.builtin.fail:
+        msg: >-
+          /dev/disk/by-id/{{ nvme_zfs_disk }} existiert nicht – nvme_zfs_disk in
+          den host_vars prüfen (ls -l /dev/disk/by-id/ | grep nvme).
+      when: not nvme_disk.stat.exists
+
+    - name: Signaturen auf der Zielplatte ermitteln
+      ansible.builtin.command: "wipefs --no-act /dev/disk/by-id/{{ nvme_zfs_disk }}"
+      register: nvme_sigs
+      changed_when: false
+
+    - name: Abbruch – Zielplatte ist nicht leer
+      ansible.builtin.fail:
+        msg: >-
+          /dev/disk/by-id/{{ nvme_zfs_disk }} ist nicht leer. Erst nach
+          docs/disk-prep.md wischen, dann erneut laufen lassen.
+          wipefs meldet: {{ nvme_sigs.stdout_lines | join(' | ') }}
+      when: nvme_sigs.stdout | trim | length > 0
+
+    - name: ZFS-Pool nvme-zfs anlegen
+      ansible.builtin.command: >-
+        zpool create -o ashift=12 -o autotrim=on -O compression=on -O atime=off
+        nvme-zfs /dev/disk/by-id/{{ nvme_zfs_disk }}

@@ -1,0 +1,26 @@
+---
+- name: QDevice-Paket installieren
+  ansible.builtin.apt:
+    name: corosync-qdevice
+    state: present
+    update_cache: true
+
+- name: Ist ein QDevice in corosync.conf konfiguriert?
+  ansible.builtin.command: corosync-cmapctl -g quorum.device.model
+  register: qdevice_model
+  changed_when: false
+  failed_when: false
+
+- name: qnetd-Client-Zertifikate vorhanden?
+  ansible.builtin.stat:
+    path: /etc/corosync/qdevice/net/nssdb/qnetd-cacert.crt
+  register: qdevice_certs
+
+- name: QDevice-Dienst aktivieren (nur wenn konfiguriert + Zertifikate da)
+  ansible.builtin.systemd:
+    name: corosync-qdevice
+    state: started
+    enabled: true
+  when:
+    - qdevice_model.rc == 0
+    - qdevice_certs.stat.exists

@@ -1,6 +1,6 @@
 ---
 - name: 00 - Base System Bootstrap & Common Role
-  hosts: bare_metal, virtual_machines
+  hosts: debian_machines
   gather_facts: true
   become: true
   pre_tasks:
