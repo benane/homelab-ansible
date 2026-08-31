@@ -11,23 +11,30 @@
            | reject('search', 'zram') | list }}"
   changed_when: true
 
-- name: Disk-Swap-UUID ermitteln
-  ansible.builtin.command: blkid -t TYPE=swap -o value -s UUID
-  register: emmc_saver_swap_uuid
+- name: PARTUUID der Swap-Partition holen (GPT-Typ = Linux swap)
+  ansible.builtin.shell:
+    cmd: >
+      lsblk -rpno PARTUUID,PARTTYPE
+      | awk '$2=="0657fd6d-a4ab-43c4-84e5-0933c84b4f4f"{print $1}'
+  register: emmc_saver_swap_partuuid
   changed_when: false
-  failed_when: false
 
-- name: Disk-Swap in fstab auf noauto pinnen (unterdrückt auch systemd-gpt-auto)
-  ansible.posix.mount:
-    path: none
-    src: "UUID={{ emmc_saver_swap_uuid.stdout | trim }}"
-    fstype: swap
-    opts: noauto
-    state: present
-  when: emmc_saver_swap_uuid.stdout | trim | length > 0
-  register: emmc_saver_fstab
+- name: Distro-Standard-Swapzeile (…swap sw…) aus fstab entfernen
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^\s*[^#].*\sswap\s+sw\b'
+    state: absent
+  register: emmc_saver_fstab_rm
+
+- name: Disk-Swap als noauto verankern (unterdrückt systemd-gpt-auto)
+  ansible.builtin.blockinfile:
+    path: /etc/fstab
+    marker: "# {mark} ANSIBLE emmc_saver disk-swap"
+    block: "PARTUUID={{ emmc_saver_swap_partuuid.stdout | trim }} none swap noauto 0 0"
+  when: emmc_saver_swap_partuuid.stdout | trim | length > 0
+  register: emmc_saver_fstab_add
 
 - name: systemd nach fstab-Änderung neu einlesen
   ansible.builtin.systemd:
     daemon_reload: true
-  when: emmc_saver_fstab is changed
+  when: emmc_saver_fstab_rm is changed or emmc_saver_fstab_add is changed
