@@ -1,9 +1,8 @@
 ---
-- name: 08 - Failsafe
+- name: 08b - unbound
   hosts: failsafe_hosts
   become: true
   gather_facts: false
   
   roles:
-    - gatus
-    - pihole
+    - unbound

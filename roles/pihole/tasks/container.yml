@@ -1,0 +1,30 @@
+- name: Podman installieren
+  ansible.builtin.apt:
+    name: podman
+    state: present
+    update_cache: true
+
+- name: Datenverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ pihole_data_dir }}"
+    state: directory
+
+- name: Quadlet-Unit schreiben
+  ansible.builtin.template:
+    src: pihole.container.j2
+    dest: /etc/containers/systemd/pihole.container
+    mode: "0600"
+    owner: root
+  no_log: true
+  notify: pihole neu starten
+  tags: [pihole-quadlet]
+  
+- name: systemd neu einlesen (Quadlet -> Unit generieren)
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: pihole aktivieren und starten
+  ansible.builtin.systemd:
+    name: pihole.service
+    state: started
+    enabled: true

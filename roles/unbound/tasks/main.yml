@@ -1,0 +1,12 @@
+---
+- name: unbound installieren
+  ansible.builtin.apt:
+    name:
+      - unbound
+    state: present
+
+- name: Unbound Konfiguration einspielen
+  ansible.builtin.template:
+    src: pi-hole.conf.j2
+    dest: "{{ unbound_config_dir }}/pi-hole.conf"
+  notify: unbound neu starten

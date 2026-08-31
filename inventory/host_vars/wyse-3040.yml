@@ -1,21 +1,30 @@
 gatus_endpoints:
   - name: pve-alderaan-api
-    url: "https://172.16.10.10:8006"
+    url: "https://{{ hostvars['pve-node01'].ansible_host }}:8006"
     interval: 2m
     conditions:
       - "[STATUS] == 200"
       - "[CERTIFICATE_EXPIRATION] > 240h"
     client:
       insecure: true
+
   - name: pve-corellia-api
-    url: "https://172.16.10.50:8006"
+    url: "https://{{ hostvars['pve-node02'].ansible_host }}:8006"
     interval: 2m
     conditions:
       - "[STATUS] == 200"
       - "[CERTIFICATE_EXPIRATION] > 240h"
     client:
       insecure: true
+
   - name: unraid
-    url: "tcp://172.16.10.20:80"
-    interval: 60s
+    url: "tcp://{{ hostvars['unraid-nas'].ansible_host }}:80"
+    interval: 2m
     conditions: ["[CONNECTED] == true"]
+
+  - name: home_assistant
+    url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"
+    interval: 2m
+    conditions: ["[CONNECTED] == true"]
+
+pihole_max_db_days: 7

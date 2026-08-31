@@ -1,5 +1,5 @@
 ---
-- name: Proxmox Nodes einrichten
+- name: 02 - Proxmox Node
   hosts: proxmox_nodes
   become: true
   serial: 1

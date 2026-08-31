@@ -1,0 +1,6 @@
+---
+- name: pihole neu starten
+  ansible.builtin.systemd:
+    name: pihole.service
+    state: restarted
+    daemon_reload: true

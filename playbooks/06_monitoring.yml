@@ -1,5 +1,5 @@
 ---
-- name: Monitoring einrichten
+- name: 06 - Monitoring
   hosts: monitoring_targets
   become: true
   

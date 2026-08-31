@@ -1,0 +1,4 @@
+---
+unbound_config_dir: /etc/unbound/unbound.conf.d
+unbound_port: 5335
+unbound_private_domains: []

@@ -1,5 +1,5 @@
 ---
-- name: eMMC Saver einrichten
+- name: 07 - eMMC Saver
   hosts: emmc_hosts
   become: true
   

@@ -42,7 +42,7 @@ ToDo:
 - proxmox token und berechtigungen automatisch anlegen?
 - Wrapper-Script für Container-Erstellung (kapselt `-e target_host=` und beim ersten Lauf `-u root`, um Tippfehler zu vermeiden)
 - `container_vmid` dynamisch ermitteln lassen (nächste freie ID ab 201), statt sie fest in `hosts.yml` vorzugeben
-- eventuell Wechsel von Uptime Kuma auf https://gatus.io (Config als YAML statt API/UI – passt besser zu Ansible)
+- eventuell Wechsel von Uptime Kuma auf https://gatus.io (Config als YAML statt API/UI – passt besser zu Ansible), bereits auf dem Wyse erfolgt. Heartbeats müssen noch eingerichtet werden. Auch: wie kann die Rolle mit einem LXC wiederverwendet werden?
 - cloudflared: später von der Token-Methode auf die Config-Datei-Variante wechseln, damit das Routing versioniert in Ansible statt nur im Cloudflare-Dashboard liegt. Referenz: https://github.com/papanito/ansible-role-cloudflared (v.a. `configure_tunnels.yml` fürs Credentials-/Config-Template und `create_routes_dns.yml` für den DNS-Routing-Schritt, der bei dieser Methode zusätzlich nötig ist – Rest der Rolle ist für unseren Fall Overkill, siehe Chat-Review) -> super test für terraform
 - esphome container mit pull der yaml configs aus github repo
 - Container-Provisioning neu strukturieren: `playbooks/containers/bootstrap.yml` wird zur Rolle `proxmox_container` (nur Provisioning: create/start/tags, Defaults in `defaults/main.yml`); später analog `proxmox_vm`. Ein schlankes Orchestrierungs-Playbook (`guest_site.yml`) wählt LXC- vs. VM-Rolle und hängt danach `common` + `hardening` + Service-Rolle an. Service-Rollen bleiben eigenständig, werden **keine** Subrollen. Details: `docs/playbook-architecture.md`

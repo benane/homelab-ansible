@@ -1,0 +1,27 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Pihole DNS and AdBlock
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image={{ pihole_image }}
+Network=host
+Volume={{ pihole_data_dir }}:/etc/pihole
+Environment=TZ={{ timezone }}
+Environment=FTLCONF_webserver_api_password={{ vault_pihole_webserver_api_password }}
+Environment=FTLCONF_database_maxDBdays={{ pihole_max_db_days }}
+Environment=FTLCONF_dns_upstreams={{ pihole_dns_upstreams | join(';') }}
+Environment=FTLCONF_dns_listeningMode=ALL
+Environment=FTLCONF_dns_domainNeeded=true
+Environment=FTLCONF_dns_expandHosts=true
+
+Environment=FTLCONF_ntp_ipv4_active={{ pihole_ntp_enabled }}
+Environment=FTLCONF_ntp_ipv6_active={{ pihole_ntp_enabled }}
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
