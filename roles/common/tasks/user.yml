@@ -29,5 +29,7 @@
 - name: SSH-Public-Key dynamisch aus ansible.cfg hinterlegen
   ansible.posix.authorized_key:
     user: ansible
+    path: /home/ansible/.ssh/authorized_keys
+    manage_dir: true
     state: present
     key: "{{ lookup('file', (ansible_private_key_file | expanduser) + '.pub') }}"
