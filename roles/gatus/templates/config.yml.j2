@@ -1,0 +1,12 @@
+# {{ ansible_managed }}
+web:
+  port: {{ gatus_web_port }}
+
+storage:
+  type: {{ gatus_storage_type }}
+{% if gatus_storage_type == 'sqlite' %}
+  path: {{ gatus_config_dir }}/data.db
+{% endif %}
+
+endpoints:
+{{ gatus_endpoints | to_nice_yaml(indent=2) | indent(2, true) }}

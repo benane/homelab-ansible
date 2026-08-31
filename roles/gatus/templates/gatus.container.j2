@@ -1,0 +1,18 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Gatus health dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image={{ gatus_image }}
+Network=host
+Volume={{ gatus_config_dir }}/config.yaml:/config/config.yaml:ro,Z
+Environment=GATUS_CONFIG_PATH=/config/config.yaml
+
+[Service]
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

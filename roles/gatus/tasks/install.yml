@@ -1,0 +1,35 @@
+- name: Podman installieren
+  ansible.builtin.apt:
+    name: podman
+    state: present
+    update_cache: true
+
+- name: Konfigurationsverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ gatus_config_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Gatus-Konfiguration schreiben
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ gatus_config_dir }}/config.yaml"
+    mode: "0644"
+  notify: gatus neu starten
+
+- name: Quadlet-Unit schreiben
+  ansible.builtin.template:
+    src: gatus.container.j2
+    dest: /etc/containers/systemd/gatus.container
+    mode: "0644"
+  notify: gatus neu starten
+
+- name: systemd neu einlesen (Quadlet -> Unit generieren)
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Gatus aktivieren und starten
+  ansible.builtin.systemd:
+    name: gatus.service
+    state: started
+    enabled: true

@@ -16,3 +16,4 @@
 - import_playbook: 03_proxmox_cluster.yml
 - import_playbook: 06_monitoring.yml
 - import_playbook: 07_emmc.yml
+- import_playbook: 08_failsafe.yml

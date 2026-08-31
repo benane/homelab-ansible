@@ -1,0 +1,7 @@
+---
+- name: failsafe einrichten
+  hosts: failsafe_hosts
+  become: true
+  
+  roles:
+    - gatus

@@ -1,0 +1,6 @@
+---
+gatus_image: "ghcr.io/twin/gatus:v5.36.0"   # Tag pinnen, nicht latest
+gatus_config_dir: /etc/gatus
+gatus_web_port: 8080
+gatus_storage_type: memory
+gatus_endpoints: []

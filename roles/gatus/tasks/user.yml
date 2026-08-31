@@ -1,0 +1,14 @@
+---
+- name: Gruppe 'gatus' anlegen
+  ansible.builtin.group:
+    name: gatus
+    state: present
+
+- name: Service-User 'gatus' anlegen
+  ansible.builtin.user:
+    name: gatus
+    group: gatus
+    system: true
+    shell: /usr/sbin/nologin
+    state: present
+    create_home: false

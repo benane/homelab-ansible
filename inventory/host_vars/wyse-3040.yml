@@ -1,0 +1,21 @@
+gatus_endpoints:
+  - name: pve-alderaan-api
+    url: "https://172.16.10.10:8006"
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 240h"
+    client:
+      insecure: true
+  - name: pve-corellia-api
+    url: "https://172.16.10.50:8006"
+    interval: 2m
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 240h"
+    client:
+      insecure: true
+  - name: unraid
+    url: "tcp://172.16.10.20:80"
+    interval: 60s
+    conditions: ["[CONNECTED] == true"]
