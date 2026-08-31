@@ -1,0 +1,30 @@
+---
+- name: ZRAM Tools installieren
+  ansible.builtin.apt:
+    name:
+      - zram-tools
+    state: present
+    update_cache: true
+
+- name: zramswap Konfiguration erstellen
+  ansible.builtin.template:
+    src: zramswap.j2
+    dest: /etc/default/zramswap
+    mode: "0644"
+  notify: restart zramswap
+
+- name: ZRAM Swap aktivieren
+  ansible.builtin.systemd:
+    name: zramswap.service
+    enabled: true
+    state: started
+
+- name: Swappiness setzen
+  ansible.builtin.sysctl:
+    name: vm.swappiness
+    value: "{{ emmc_saver_swappiness }}"
+    sysctl_file: /etc/sysctl.d/60-emmc-saver.conf
+    sysctl_set: true
+    state: present
+
+- meta: flush_handlers

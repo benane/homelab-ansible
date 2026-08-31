@@ -1,0 +1,12 @@
+---
+- name: Drop-in-Verzeichnis anlegen
+  ansible.builtin.file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: "0755"
+
+- name: "journald: eMMC-Cap setzen"
+  ansible.builtin.template:
+    src: journald-emmc.conf.j2
+    dest: /etc/systemd/journald.conf.d/emmc.conf
+  notify: restart journald

@@ -1,0 +1,8 @@
+---
+- name: eMMC Saver einrichten
+  hosts: emmc_hosts
+  become: true
+  
+  roles:
+    - emmc_saver
+    

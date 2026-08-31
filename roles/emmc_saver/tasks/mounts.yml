@@ -1,0 +1,10 @@
+---
+- name: noatime fürs Root-FS
+  vars:
+    root_mnt: "{{ ansible_facts.mounts | selectattr('mount', 'equalto', '/') | first }}"
+  ansible.posix.mount:
+    path: /
+    src: "UUID={{ root_mnt.uuid }}"
+    fstype: "{{ root_mnt.fstype }}"
+    opts: "{{ (root_mnt.options.split(',') | reject('equalto', 'relatime') | list + ['noatime']) | unique | join(',') }}"
+    state: mounted

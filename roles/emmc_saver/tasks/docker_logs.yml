@@ -1,0 +1,7 @@
+---
+- name: Docker-Log-Limits setzen
+  ansible.builtin.copy:
+    dest: /etc/docker/daemon.json
+    content: "{{ {'log-driver': 'local', 'log-opts': {'max-size': '10m', 'max-file': '3'}} | to_nice_json }}"
+    mode: "0644"
+  notify: restart docker

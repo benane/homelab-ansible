@@ -1,0 +1,9 @@
+---
+- import_tasks: zram.yml
+  when: emmc_saver_zram_enabled
+- import_tasks: swap.yml
+  when: emmc_saver_disable_disk_swap
+- import_tasks: journald.yml
+- import_tasks: mounts.yml
+- import_tasks: docker_logs.yml
+  when: emmc_saver_manage_docker_logs

@@ -1,0 +1,16 @@
+---
+- name: restart zramswap
+  ansible.builtin.systemd:
+    name: zramswap.service
+    state: restarted
+
+- name: restart journald
+  ansible.builtin.systemd:
+    name: systemd-journald.service
+    state: restarted
+
+- name: restart docker
+  ansible.builtin.systemd:
+    name: docker.service
+    state: restarted
+    daemon_reload: true

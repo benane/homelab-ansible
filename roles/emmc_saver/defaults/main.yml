@@ -1,0 +1,8 @@
+---
+emmc_saver_zram_enabled: true
+emmc_saver_zram_algo: zstd
+emmc_saver_zram_percent: 50        # 50 % von 2 GB RAM ≈ 1 GB komprimierter Swap
+emmc_saver_disable_disk_swap: true # mmcblk0p3 aus fstab + swapoff
+emmc_saver_journal_max_use: 50M
+emmc_saver_manage_docker_logs: false
+emmc_saver_swappiness: 100

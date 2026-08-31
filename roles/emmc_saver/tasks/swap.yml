@@ -1,0 +1,33 @@
+---
+- name: Aktive Swaps ermitteln
+  ansible.builtin.command: cat /proc/swaps
+  register: emmc_saver_swaps
+  changed_when: false
+
+- name: Alle Nicht-zram-Swaps abschalten
+  ansible.builtin.command: "swapoff {{ item }}"
+  loop: "{{ emmc_saver_swaps.stdout_lines[1:]
+           | map('regex_replace', '\\s.*$', '')
+           | reject('search', 'zram') | list }}"
+  changed_when: true
+
+- name: Disk-Swap-UUID ermitteln
+  ansible.builtin.command: blkid -t TYPE=swap -o value -s UUID
+  register: emmc_saver_swap_uuid
+  changed_when: false
+  failed_when: false
+
+- name: Disk-Swap in fstab auf noauto pinnen (unterdrückt auch systemd-gpt-auto)
+  ansible.posix.mount:
+    path: none
+    src: "UUID={{ emmc_saver_swap_uuid.stdout | trim }}"
+    fstype: swap
+    opts: noauto
+    state: present
+  when: emmc_saver_swap_uuid.stdout | trim | length > 0
+  register: emmc_saver_fstab
+
+- name: systemd nach fstab-Änderung neu einlesen
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: emmc_saver_fstab is changed
