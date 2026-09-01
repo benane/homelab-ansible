@@ -1,5 +1,92 @@
+---
+gatus_alerting:
+  discord:
+    webhook-url: "${DISCORD_WEBHOOK}"
+
+gatus_external_endpoints:
+  - name: appdata
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 169h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
+  - name: home assistant
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 25h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
+  - name: klipper
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 169h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
+  - name: nightly
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 25h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
+  - name: paperless
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 25h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
+  - name: vaultwarden
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 25h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
+  - name: vzdump lxc
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 25h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
+  - name: zigbee2mqtt
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 25h
+    alerts:
+      - type: discord
+        failure-threshold: 1
+        send-on-resolved: true
+
 gatus_endpoints:
   - name: pve-alderaan-api
+    group: infrastructure
     url: "https://{{ hostvars['pve-node01'].ansible_host }}:8006"
     interval: 2m
     conditions:
@@ -7,24 +94,45 @@ gatus_endpoints:
       - "[CERTIFICATE_EXPIRATION] > 240h"
     client:
       insecure: true
+    alerts:
+    - type: discord
+      failure-threshold: 1
+      send-on-resolved: true
 
   - name: pve-corellia-api
     url: "https://{{ hostvars['pve-node02'].ansible_host }}:8006"
+    group: infrastructure
     interval: 2m
     conditions:
       - "[STATUS] == 200"
       - "[CERTIFICATE_EXPIRATION] > 240h"
     client:
       insecure: true
+    alerts:
+    - type: discord
+      failure-threshold: 1
+      send-on-resolved: true
+
 
   - name: unraid
     url: "tcp://{{ hostvars['unraid-nas'].ansible_host }}:80"
+    group: infrastructure
     interval: 2m
     conditions: ["[CONNECTED] == true"]
+    alerts:
+    - type: discord
+      failure-threshold: 1
+      send-on-resolved: true
+
 
   - name: home_assistant
     url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"
+    group: infrastructure
     interval: 2m
     conditions: ["[CONNECTED] == true"]
+    alerts:
+    - type: discord
+      failure-threshold: 1
+      send-on-resolved: true
 
 pihole_max_db_days: 7

@@ -1,8 +1,8 @@
 ---
-- name: 08b - Unbound
+- name: 08 - Gatus
   hosts: failsafe_hosts
   become: true
   gather_facts: false
   
   roles:
-    - unbound
+    - gatus

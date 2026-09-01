@@ -1,9 +1,4 @@
 ---
-- name: 08 - Failsafe
-  hosts: failsafe_hosts
-  become: true
-  gather_facts: false
-  
-  roles:
-    - gatus
-    - pihole
+- import_playbook: 08a_gatus.yml
+- import_playbook: 08b_unbound.yml
+- import_playbook: 08c_pihole.yml

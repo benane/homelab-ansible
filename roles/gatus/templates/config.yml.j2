@@ -8,5 +8,15 @@ storage:
   path: {{ gatus_config_dir }}/data.db
 {% endif %}
 
+{% if gatus_alerting %}
+alerting:
+{{ gatus_alerting | to_nice_yaml(indent=2, width=1000) | indent(2, true) }}
+{% endif %}
+
 endpoints:
-{{ gatus_endpoints | to_nice_yaml(indent=2) | indent(2, true) }}
+{{ gatus_endpoints | to_nice_yaml(indent=2, width=1000) | indent(2, true) }}
+
+{% if gatus_external_endpoints %}
+external_endpoints:
+{{ gatus_external_endpoints | to_nice_yaml(indent=2, width=1000) | indent(2, true) }}
+{% endif %}

@@ -8,7 +8,9 @@ Wants=network-online.target
 Image={{ gatus_image }}
 Network=host
 Volume={{ gatus_config_dir }}/config.yaml:/config/config.yaml:ro,Z
+{# sqlite braucht rw-Volume statt config.yaml:ro #}
 Environment=GATUS_CONFIG_PATH=/config/config.yaml
+EnvironmentFile={{ gatus_config_dir }}/secrets.env
 
 [Service]
 Restart=on-failure

@@ -10,6 +10,15 @@
     state: directory
     mode: "0755"
 
+- name: secrets.env ausrollen
+  ansible.builtin.template:
+    src: secrets.env.j2
+    dest: "{{ gatus_config_dir }}/secrets.env"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
 - name: Gatus-Konfiguration schreiben
   ansible.builtin.template:
     src: config.yml.j2
