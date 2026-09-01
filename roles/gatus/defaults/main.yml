@@ -1,8 +1,13 @@
 ---
 gatus_image: "ghcr.io/twin/gatus:v5.36.0"   # Tag pinnen, nicht latest
+gatus_version: "5.36.0"
 gatus_config_dir: /etc/gatus
+gatus_data_dir: /var/lib/gatus
 gatus_web_port: 8080
 gatus_storage_type: memory
+gatus_deployment: container
+gatus_user: gatus
+gatus_discord_webhook: "{{ vault_discord_critical_webhook }}"
 gatus_alerting: {}
 gatus_endpoints: []
 gatus_external_endpoints: []

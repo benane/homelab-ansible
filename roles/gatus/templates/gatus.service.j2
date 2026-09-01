@@ -1,0 +1,20 @@
+[Unit]
+Description=Gatus health dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ gatus_user }}
+Group={{ gatus_user }}
+Environment=GATUS_CONFIG_PATH={{ gatus_config_dir }}/config.yaml
+EnvironmentFile={{ gatus_config_dir }}/secrets.env
+ExecStart=/usr/local/bin/gatus
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ gatus_data_dir }}
+
+[Install]
+WantedBy=multi-user.target

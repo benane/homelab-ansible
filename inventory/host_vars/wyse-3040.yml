@@ -88,7 +88,7 @@ gatus_endpoints:
   - name: pve-alderaan-api
     group: infrastructure
     url: "https://{{ hostvars['pve-node01'].ansible_host }}:8006"
-    interval: 2m
+    interval: 5m
     conditions:
       - "[STATUS] == 200"
       - "[CERTIFICATE_EXPIRATION] > 240h"
@@ -102,7 +102,7 @@ gatus_endpoints:
   - name: pve-corellia-api
     url: "https://{{ hostvars['pve-node02'].ansible_host }}:8006"
     group: infrastructure
-    interval: 2m
+    interval: 5m
     conditions:
       - "[STATUS] == 200"
       - "[CERTIFICATE_EXPIRATION] > 240h"
@@ -116,7 +116,7 @@ gatus_endpoints:
   - name: unraid
     url: "tcp://{{ hostvars['unraid-nas'].ansible_host }}:80"
     group: infrastructure
-    interval: 2m
+    interval: 5m
     conditions: ["[CONNECTED] == true"]
     alerts:
     - type: discord
@@ -126,7 +126,27 @@ gatus_endpoints:
   - name: home-assistant
     url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"
     group: infrastructure
-    interval: 2m
+    interval: 5m
+    conditions: ["[CONNECTED] == true"]
+    alerts:
+    - type: discord
+      failure-threshold: 1
+      send-on-resolved: true
+
+  - name: primary-dns
+    url: "http://{{ hostvars['rpi_dns'].ansible_host }}"
+    group: infrastructure
+    interval: 5m
+    conditions: ["[CONNECTED] == true"]
+    alerts:
+    - type: discord
+      failure-threshold: 1
+      send-on-resolved: true
+
+  - name: wan
+    url: "http://1.1.1.1"
+    group: infrastructure
+    interval: 5m
     conditions: ["[CONNECTED] == true"]
     alerts:
     - type: discord

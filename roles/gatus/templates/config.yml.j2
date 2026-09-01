@@ -5,7 +5,7 @@ web:
 storage:
   type: {{ gatus_storage_type }}
 {% if gatus_storage_type == 'sqlite' %}
-  path: {{ gatus_config_dir }}/data.db
+  path: {{ gatus_data_dir }}/data.db
 {% endif %}
 
 {% if gatus_alerting %}
@@ -13,8 +13,10 @@ alerting:
 {{ gatus_alerting | to_nice_yaml(indent=2, width=1000) | indent(2, true) }}
 {% endif %}
 
+{% if gatus_endpoints %}
 endpoints:
 {{ gatus_endpoints | to_nice_yaml(indent=2, width=1000) | indent(2, true) }}
+{% endif %}
 
 {% if gatus_external_endpoints %}
 external-endpoints:

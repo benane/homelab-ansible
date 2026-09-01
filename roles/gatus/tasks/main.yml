@@ -1,2 +1,6 @@
 ---
-- import_tasks: install.yml
+- import_tasks: container.yml
+  when: gatus_deployment == 'container'
+- import_tasks: baremetal.yml
+  when: gatus_deployment == 'baremetal'
+

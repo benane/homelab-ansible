@@ -1,0 +1,23 @@
+---
+gatus_storage_type: sqlite
+gatus_deployment: baremetal
+gatus_discord_webhook: "{{ vault_discord_webhook }}" 
+
+gatus_alerting:
+  discord:
+    webhook-url: "${DISCORD_WEBHOOK}"
+
+gatus_endpoints:
+  - name: pve-alderaan-api
+    group: infrastructure
+    url: "https://{{ hostvars['pve-node01'].ansible_host }}:8006"
+    interval: 5m
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 240h"
+    client:
+      insecure: true
+    alerts:
+    - type: discord
+      failure-threshold: 1
+      send-on-resolved: true

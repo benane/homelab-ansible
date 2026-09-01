@@ -42,6 +42,7 @@
     - name: Container starten
       community.proxmox.proxmox:
         vmid: "{{ ct_vmid }}"
+        node: "{{ ct_node }}"
         state: started
 
     - name: Tags setzen

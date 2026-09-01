@@ -12,6 +12,8 @@
 - name: Warten, bis SSH erreichbar ist
   hosts: "{{ target_host }}"
   gather_facts: false
+  vars:
+    ansible_user: root
   tasks:
     - ansible.builtin.wait_for_connection:
         timeout: 60
@@ -19,6 +21,8 @@
 - name: Container einrichten
   hosts: "{{ target_host }}"
   become: true
+  vars:
+    ansible_user: root
   roles:
     - common
     - hardening
