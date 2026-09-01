@@ -113,7 +113,6 @@ gatus_endpoints:
       failure-threshold: 1
       send-on-resolved: true
 
-
   - name: unraid
     url: "tcp://{{ hostvars['unraid-nas'].ansible_host }}:80"
     group: infrastructure
@@ -124,8 +123,7 @@ gatus_endpoints:
       failure-threshold: 1
       send-on-resolved: true
 
-
-  - name: home_assistant
+  - name: home-assistant
     url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"
     group: infrastructure
     interval: 2m
