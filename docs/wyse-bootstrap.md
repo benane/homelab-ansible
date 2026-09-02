@@ -48,18 +48,19 @@ Verwandte Docs: `playbook-architecture.md`, `disk-prep.md`, `cluster-join-runboo
 
 ## 2. Entscheidung: Docker vs. bare-metal
 
-Für 7,3 GB eMMC / 2 GB RAM / Failsafe-Tier: **hybrid, klar Richtung bare-metal.**
-Docker nur da, wo bare-metal echt wehtut.
+Für 7,3 GB eMMC / 2 GB RAM / Failsafe-Tier: **komplett bare-metal.** Kein
+Container-Runtime auf dem Host.
 
 | Dienst | Ziel | Begründung |
 |---|---|---|
 | **node-exporter** | **bare-metal** – vorhandene `node_exporter`-Rolle | Container ist reiner Overhead; löst nebenbei den `:9100`-Konflikt |
 | **unbound** | **bare-metal** – `apt install unbound` + Config-Template | trivial nativ; kein `dns_net`-NAT, keine der o.g. Docker-Bugs mehr |
-| **uptime-kuma** | **durch Gatus ersetzen** (Go-Binary + YAML) | Scope ist eh nur Infra-Pings/Heartbeats = Gatus' Kerngebiet; YAML passt zu Ansible; steht im README-ToDo. Nur behalten, wenn Kuma-UI gewünscht → dann als *einziger* Container. |
-| **Pi-hole** | **Container behalten** | bare-metal-Pi-hole via Ansible ist ein Krampf (Installer managt lighttpd/php/dnsmasq, nicht idempotent). Container ist der saubere Weg. |
+| **uptime-kuma** | **durch Gatus ersetzen** (Go-Binary + YAML) | Scope ist eh nur Infra-Pings/Heartbeats = Gatus' Kerngebiet; YAML passt zu Ansible; steht im README-ToDo |
+| **Pi-hole** | **bare-metal** – Pi-hole v6 | v6 ist ein einzelnes FTL-Binary mit eingebautem Webserver – kein lighttpd/php/dnsmasq-Gefrickel mehr, das den Installer früher un-idempotent machte. `pihole.toml` als Template, Rest wie die Container-Variante. |
 
-**Ergebnis:** Docker (oder besser **Podman + Quadlet** – daemonlos, in Debian 13)
-für genau *einen* Container (Pi-hole). Alles andere systemd + Ansible-Rollen.
+**Ergebnis:** alles systemd + Ansible-Rollen, **kein Docker/Podman** auf dem Wyse.
+Podman + Quadlet war ein Zwischenschritt (kurz liefen `pihole` und `gatus` so) –
+fällt mit Pi-hole v6 bare-metal und dem Gatus-Binary weg.
 
 ---
 
@@ -164,18 +165,21 @@ neu – Key-Login als `ansible` funktioniert dann, Konsole als Fallback.
 2. **node-exporter bare-metal**: `node_exporter`-Rolle auf den Wyse anwenden,
    Docker-`node-exporter` weg.
 3. **Gatus statt uptime-kuma**: Binary + `config.yaml` (Endpoints = Infra-Pings,
-   Backup-Heartbeats), systemd-Unit. Docker-`uptime-kuma` weg – oder als einzigen
-   Container behalten, wenn UI gewünscht.
-4. **Pi-hole**: Compose- bzw. Quadlet-Datei + `secrets.env` per Ansible verwalten
-   (Secrets aus dem Vault templaten), statt `deploy.sh`-rsync. „Kein git clone auf
-   dem Host" bleibt – Ansible pusht die Dateien.
-5. **`docker_host`-Rolle**: falls Docker bleibt (Pi-hole), die vorhandene Rolle
-   ausbauen (Docker-Installation, `daemon.json`, Compose-Deployment). Sonst
-   Podman + Quadlet.
+   Backup-Heartbeats), systemd-Unit. `gatus`-Rolle mit `gatus_deployment: baremetal`
+   in `host_vars/wyse-3040.yml` (Default der Rolle ist `container`). Podman-Quadlet
+   `gatus` weg.
+4. **Pi-hole bare-metal (v6)**: FTL per Paket-Repo, `pihole.toml` +
+   Custom-DNS/CNAME-Records aus Vault bzw. `group_vars` templaten, statt
+   `deploy.sh`-rsync. „Kein git clone auf dem Host" bleibt – Ansible pusht die
+   Dateien. Danach Podman-Quadlet `pihole` + `/var/lib/pihole` entfernen.
+5. **Container-Runtime abbauen**: sobald `pihole` und `gatus` bare-metal laufen,
+   `podman` deinstallieren, `/etc/containers/systemd/` aufräumen, `wyse-3040` aus
+   `docker_hosts` nehmen. Die `docker_host`-Rolle greift dann nicht mehr.
 
 ### Inventory-Endzustand
 
 - `wyse-3040` in `debian_machines` (bekommt `common` + `hardening`)
+- `wyse-3040` **nicht mehr** in `docker_hosts` (kein Container-Runtime mehr)
 - eigene Gruppe/Playbook für den Failsafe-Stack (unbound, gatus, pihole,
   node-exporter) – analog zu `06_monitoring.yml`
 - `pve_qdevice` bleibt (nur Doku, das Setup selbst ist manuell im
