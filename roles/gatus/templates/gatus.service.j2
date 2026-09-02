@@ -14,7 +14,9 @@ RestartSec=10
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
+{% if gatus_storage_type == "sqlite" %}
 ReadWritePaths={{ gatus_data_dir }}
+{% endif %}
 
 [Install]
 WantedBy=multi-user.target

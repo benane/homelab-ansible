@@ -1,8 +1,6 @@
 # {{ ansible_managed }}
 [Unit]
 Description=Gatus health dashboard
-After=network-online.target
-Wants=network-online.target
 
 [Container]
 Image={{ gatus_image }}

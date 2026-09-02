@@ -1,6 +1,7 @@
 ---
 gatus_image: "ghcr.io/twin/gatus:v5.36.0"   # Tag pinnen, nicht latest
 gatus_version: "5.36.0"
+gatus_binary_architecture: "linux-amd64"
 gatus_config_dir: /etc/gatus
 gatus_data_dir: /var/lib/gatus
 gatus_web_port: 8080

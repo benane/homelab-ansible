@@ -166,8 +166,8 @@ neu – Key-Login als `ansible` funktioniert dann, Konsole als Fallback.
    Docker-`node-exporter` weg.
 3. **Gatus statt uptime-kuma**: Binary + `config.yaml` (Endpoints = Infra-Pings,
    Backup-Heartbeats), systemd-Unit. `gatus`-Rolle mit `gatus_deployment: baremetal`
-   in `host_vars/wyse-3040.yml` (Default der Rolle ist `container`). Podman-Quadlet
-   `gatus` weg.
+   in `host_vars/wyse-3040.yml` (Default der Rolle ist `container`). Ablauf des
+   Umzugs siehe **Gatus-Cutover auf dem Wyse** unten.
 4. **Pi-hole bare-metal (v6)**: FTL per Paket-Repo, `pihole.toml` +
    Custom-DNS/CNAME-Records aus Vault bzw. `group_vars` templaten, statt
    `deploy.sh`-rsync. „Kein git clone auf dem Host" bleibt – Ansible pusht die
@@ -175,6 +175,59 @@ neu – Key-Login als `ansible` funktioniert dann, Konsole als Fallback.
 5. **Container-Runtime abbauen**: sobald `pihole` und `gatus` bare-metal laufen,
    `podman` deinstallieren, `/etc/containers/systemd/` aufräumen, `wyse-3040` aus
    `docker_hosts` nehmen. Die `docker_host`-Rolle greift dann nicht mehr.
+
+### Gatus-Cutover auf dem Wyse (Einmal-Handschritt)
+
+Die `gatus`-Rolle beschreibt nur den **Zielzustand** (bare-metal Gatus läuft). Das
+Abräumen des alten Podman-Containers ist eine Migrations-Handlung und steht
+bewusst **nicht** in Ansible.
+
+**Warum die Reihenfolge zählt:** Quadlet- und bare-metal-Pfad tragen denselben
+Unit-Namen `gatus.service`. Solange der Container läuft, ist `gatus.service` für
+systemd bereits *aktiv*; der Rollen-Task „Gatus aktivieren und starten"
+(`state: started`) ist dann ein No-op und das Binary startet nie. Also erst den
+Container komplett abräumen, dann die Rolle laufen lassen.
+
+1. **Host-Var setzen und committen:** `gatus_deployment: baremetal` in
+   `inventory/host_vars/wyse-3040.yml`.
+
+2. **Auf dem Wyse den Container abräumen** (als root/sudo):
+
+   ```bash
+   systemctl stop gatus.service
+   rm /etc/containers/systemd/gatus.container
+   systemctl daemon-reload          # generierte Unit verschwindet aus /run/systemd/generator/
+   systemctl status gatus.service   # muss jetzt "could not be found" sagen
+   ```
+
+3. **Rolle anwenden** (nur den Wyse, nicht `lxc-gatus` mittreffen):
+
+   ```bash
+   ansible-playbook playbooks/08a_gatus.yml --limit wyse-3040 --check --diff   # Sichtprüfung
+   ansible-playbook playbooks/08a_gatus.yml --limit wyse-3040
+   ```
+
+   Die Rolle legt jetzt `/etc/systemd/system/gatus.service` frisch an und startet
+   sie sauber – kein Schatten-Unit mehr aus dem Generator.
+
+4. **Verifizieren:**
+
+   ```bash
+   systemctl cat gatus.service      # nur noch /etc/systemd/system/gatus.service
+   systemctl status gatus.service   # active (running), User=gatus
+   curl -s localhost:8080/health    # Gatus antwortet
+   ```
+
+5. **Podman-Reste entfernen:**
+
+   ```bash
+   podman ps -a                     # steht noch ein gestoppter 'gatus'-Container?
+   podman rm gatus                  # falls ja
+   podman rmi ghcr.io/twin/gatus:v5.36.0
+   ```
+
+   Das `podman`-Paket selbst bleibt vorerst – das fällt erst mit dem Pi-hole-Umzug
+   (Punkt 5 der Liste).
 
 ### Inventory-Endzustand
 

@@ -27,10 +27,11 @@
     owner: "{{ gatus_user }}"
     group: "{{ gatus_user }}"
     mode: "0755"
+  when: gatus_storage_type == 'sqlite'
 
 - name: Gatus-Binary installieren
   ansible.builtin.copy:
-    src: "gatus-{{ gatus_version }}-linux-amd64"
+    src: "gatus-{{ gatus_version }}-{{ gatus_binary_architecture }}"
     dest: /usr/local/bin/gatus
     mode: "0755"
     owner: "{{ gatus_user }}"
