@@ -50,6 +50,16 @@ gatus_endpoints:
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
 
+  - name: mustafar-gatus
+    url: "http://{{ hostvars['wyse-3040'].ansible_host }}:8080/health"
+    group: infrastructure
+    interval: 1m
+    conditions: ["[STATUS] == 200"]
+    alerts:
+      - type: discord
+        failure-threshold: "{{ gatus_failure_threshold }}"
+        send-on-resolved: true
+
   - name: home-assistant
     url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"
     group: proxmox
