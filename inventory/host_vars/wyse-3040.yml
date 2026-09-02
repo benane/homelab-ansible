@@ -78,7 +78,7 @@ gatus_external_endpoints:
     group: backups
     token: "${GATUS_HEARTBEAT_TOKEN}"
     heartbeat:
-      interval: 25h
+      interval: 169h
     alerts:
       - type: discord
         failure-threshold: 1

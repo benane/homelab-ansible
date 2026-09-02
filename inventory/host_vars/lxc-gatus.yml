@@ -1,7 +1,7 @@
 ---
 gatus_storage_type: sqlite
 gatus_deployment: baremetal
-gatus_discord_webhook: "{{ vault_discord_webhook }}" 
+gatus_discord_webhook: "${DISCORD_WEBHOOK}"
 
 gatus_alerting:
   discord:
