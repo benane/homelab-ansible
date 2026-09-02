@@ -1,6 +1,6 @@
 ---
 - name: 08 - Gatus
-  hosts: failsafe_hosts
+  hosts: gatus_hosts
   become: true
   gather_facts: false
   

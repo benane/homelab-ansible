@@ -1,7 +1,8 @@
 ---
 gatus_storage_type: sqlite
 gatus_deployment: baremetal
-gatus_discord_webhook: "${DISCORD_WEBHOOK}"
+gatus_discord_webhook: "{{ vault_discord_webhook }}"
+gatus_failure_threshold: 2
 
 gatus_alerting:
   discord:
@@ -11,7 +12,7 @@ gatus_endpoints:
   - name: pve-alderaan-api
     group: infrastructure
     url: "https://{{ hostvars['pve-node01'].ansible_host }}:8006"
-    interval: 5m
+    interval: 1m
     conditions:
       - "[STATUS] == 200"
       - "[CERTIFICATE_EXPIRATION] > 240h"
@@ -19,5 +20,298 @@ gatus_endpoints:
       insecure: true
     alerts:
     - type: discord
-      failure-threshold: 1
+      failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
+
+  - name: pve-corellia-api
+    url: "https://{{ hostvars['pve-node02'].ansible_host }}:8006"
+    group: infrastructure
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[CERTIFICATE_EXPIRATION] > 240h"
+    client:
+      insecure: true
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: unraid-nas
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}"
+    group: infrastructure
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+    client:
+      insecure: true
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: home-assistant
+    url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"
+    group: proxmox
+    interval: 1m
+    conditions: ["[CONNECTED] == true"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: grafana
+    url: "http://172.16.10.210:3000/api/health"
+    group: proxmox
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].database == ok"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: cloudflared
+    url: "http://172.16.10.212:2000/ready"
+    group: proxmox
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].readyConnections > 0"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: mosquitto
+    url: "tcp://{{ hostvars['lxc-mosquitto'].ansible_host }}:1883"
+    group: proxmox
+    interval: 1m
+    conditions: ["[CONNECTED] == true"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: npm
+    url: "http://172.16.10.208:81/api"
+    group: proxmox
+    interval: 1m
+    conditions:
+    - "[CONNECTED] == true"
+    - "[BODY].status == OK"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+    
+  - name: paperless
+    url: "http://172.16.10.207:8000"
+    group: proxmox
+    interval: 1m
+    conditions: ["[STATUS] < 400"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: vaultwarden
+    url: "http://172.16.10.205:8000/alive"
+    group: proxmox
+    interval: 1m
+    conditions: ["[STATUS] == 200"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: victoriametrics
+    url: "http://172.16.10.209:8428/health"
+    group: proxmox
+    interval: 1m
+    conditions: ["[STATUS] == 200"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: wattwarriors
+    url: "http://172.16.10.211:8000/api/health"
+    group: proxmox
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].status == ok"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: zigbee2mqtt
+    url: "http://{{ hostvars['lxc-zigbee2mqtt'].ansible_host }}:8080"
+    group: proxmox
+    interval: 1m
+    conditions: ["[STATUS] == 200"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: authentik
+    url: "http://172.16.10.213:9000/-/health/ready/"
+    group: proxmox
+    interval: 1m
+    conditions:
+      - "[STATUS] < 300"
+    alerts:
+      - type: discord
+        failure-threshold: "{{ gatus_failure_threshold }}"
+        send-on-resolved: true
+
+  - name: cloudflared-edge
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:2000/ready"
+    group: unraid
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].readyConnections > 0"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: immich
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8088/api/server/ping"
+    group: unraid
+    interval: 1m
+    conditions:
+    - "[STATUS] == 200"
+    - "[BODY].res == pong"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: jellyfin
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8096/health"
+    group: unraid
+    interval: 1m
+    conditions:
+    - "[STATUS] == 200"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: maintainerr
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:6246"
+    group: unraid
+    interval: 1m
+    conditions: ["[STATUS] == 200"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: prowlarr
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:9696/ping"
+    group: unraid
+    interval: 1m
+    conditions: 
+    - "[STATUS] == 200"
+    - "[BODY].status == OK"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: radarr
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:7878/ping"
+    group: unraid
+    interval: 1m
+    conditions: 
+    - "[STATUS] == 200"
+    - "[BODY].status == OK"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: sonarr
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8989/ping"
+    group: unraid
+    interval: 1m
+    conditions: 
+    - "[STATUS] == 200"
+    - "[BODY].status == OK"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: bazarr
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:6767"
+    group: unraid
+    interval: 1m
+    conditions: ["[STATUS] < 400"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: sabnzbd
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8080"
+    group: unraid
+    interval: 1m
+    conditions: ["[STATUS] == 200"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: seer
+    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:5055/api/v1/status"
+    group: unraid
+    interval: 1m
+    conditions: ["[STATUS] == 200"]
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: pihole-hoth
+    url: "{{ hostvars['rpi-dns'].ansible_host }}"
+    group: DNS
+    interval: 1m
+    dns:
+      query-name: "cloudflare.com"
+      query-type: "A"
+    conditions: 
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] != 0.0.0.0"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: pihole-mustafar
+    url: "{{ hostvars['wyse-3040'].ansible_host }}"
+    group: DNS
+    interval: 1m
+    dns:
+      query-name: "cloudflare.com"
+      query-type: "A"
+    conditions: 
+      - "[DNS_RCODE] == NOERROR"
+      - "[BODY] != 0.0.0.0"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+gatus_maintenance:
+  every: ["Monday"]
+  start: "03:55"
+  duration: "2h10m"
+  timezone: "{{ timezone }}"

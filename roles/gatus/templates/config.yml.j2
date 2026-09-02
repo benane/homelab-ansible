@@ -22,3 +22,8 @@ endpoints:
 external-endpoints:
 {{ gatus_external_endpoints | to_nice_yaml(indent=2, width=1000) | indent(2, true) }}
 {% endif %}
+
+{% if gatus_maintenance %}
+maintenance:
+{{ gatus_maintenance | to_nice_yaml(indent=2, width=1000) | indent(2, true) }}
+{% endif %}

@@ -8,6 +8,9 @@ gatus_storage_type: memory
 gatus_deployment: container
 gatus_user: gatus
 gatus_discord_webhook: "{{ vault_discord_critical_webhook }}"
+gatus_failure_threshold: 3
+gatus_failure_critical_threshold: 1
 gatus_alerting: {}
 gatus_endpoints: []
 gatus_external_endpoints: []
+gatus_maintenance: {}
