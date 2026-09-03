@@ -1,14 +1,77 @@
----
-- name: Storage-Konfig einlesen
-  ansible.builtin.command: pvesm status --storage nvme-zfs
-  register: pvesm_nvme
+# --- Rohdaten einsammeln --------------------------------------------------
+
+- name: "nvme-zfs: prüfen, ob der ZFS-Pool auf diesem Host existiert"
+  ansible.builtin.command: zpool list -H -o name nvme-zfs
+  register: zpool_nvme
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: "nvme-zfs: aktuelle Storage-Definition aus dem Cluster lesen"
+  ansible.builtin.command: pvesh get /storage/nvme-zfs --output-format json
+  register: nvme_zfs_def
   changed_when: false
   failed_when: false
   run_once: true
+  check_mode: false
 
-- name: nvme-zfs als Storage eintragen (vorerst nur Corellia)
-  ansible.builtin.command: >-
-    pvesm add zfspool nvme-zfs --pool nvme-zfs --nodes Corellia
-    --content images,rootdir
-  when: pvesm_nvme.rc != 0
+- name: DEBUG
+  ansible.builtin.debug: 
+    var: nvme_zfs_def
   run_once: true
+
+# --- An der Grenze normalisieren: alles wird eine sortierte Liste --------
+
+- name: "nvme-zfs: SOLL – Nodes, die den Pool wirklich haben"
+  ansible.builtin.set_fact:
+    nvme_zfs_soll: "{{ (nvme_zfs_soll | default([])) + [hostvars[item].system_hostname] }}"
+  loop: "{{ groups['proxmox_nodes'] }}"
+  when: hostvars[item].zpool_nvme.rc | default(1) == 0
+  run_once: true
+
+- name: "nvme-zfs: SOLL sortieren (auch wenn keine Node den Pool hat)"
+  ansible.builtin.set_fact:
+    nvme_zfs_soll: "{{ (nvme_zfs_soll | default([])) | unique | sort }}"
+  run_once: true
+
+- name: "nvme-zfs: IST – Node-Liste aus storage.cfg"
+  ansible.builtin.set_fact:
+    nvme_zfs_ist: >-
+      {{ ((nvme_zfs_def.stdout | from_json).nodes | default(''))
+         | split(',') | select | unique | sort
+         if (nvme_zfs_def.rc == 0 and (nvme_zfs_def.stdout | trim | length) > 0)
+         else [] }}
+  run_once: true
+
+- name: "nvme-zfs: ZIEL – bestehende plus neue Nodes (nur wachsen)"
+  ansible.builtin.set_fact:
+    nvme_zfs_ziel: "{{ (nvme_zfs_ist + nvme_zfs_soll) | unique | sort }}"
+  run_once: true
+
+- name: "nvme-zfs: Übersicht"
+  ansible.builtin.debug:
+    msg:
+      - "soll (Pool vorhanden): {{ nvme_zfs_soll }}"
+      - "ist  (storage.cfg):    {{ nvme_zfs_ist }}"
+      - "ziel:                  {{ nvme_zfs_ziel }}"
+  run_once: true
+
+# --- Handeln: ab hier sind alle drei saubere Listen ---------------------
+
+- name: "nvme-zfs: Cluster-Storage anlegen (existiert noch nicht)"
+  ansible.builtin.command: >-
+    pvesm add zfspool nvme-zfs --pool nvme-zfs
+    --content images,rootdir
+    --nodes {{ nvme_zfs_ziel | join(',') }}
+  run_once: true
+  when:
+    - nvme_zfs_def.rc != 0
+    - nvme_zfs_ziel | length > 0
+
+- name: "nvme-zfs: Node-Liste der Cluster-Storage angleichen"
+  ansible.builtin.command: >-
+    pvesm set nvme-zfs --nodes {{ nvme_zfs_ziel | join(',') }}
+  run_once: true
+  when:
+    - nvme_zfs_def.rc == 0
+    - nvme_zfs_ziel != nvme_zfs_ist

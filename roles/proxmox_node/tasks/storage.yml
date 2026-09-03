@@ -38,5 +38,7 @@
 
     - name: ZFS-Pool nvme-zfs anlegen
       ansible.builtin.command: >-
-        zpool create -o ashift=12 -o autotrim=on -O compression=on -O atime=off
+        zpool create -o ashift=12 -o autotrim=on
+        -O compression=on -O atime=off -O xattr=sa -O acltype=posixacl
         nvme-zfs /dev/disk/by-id/{{ nvme_zfs_disk }}
+      changed_when: true
