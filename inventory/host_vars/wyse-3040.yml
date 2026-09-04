@@ -1,6 +1,8 @@
 ---
+pihole_deployment: baremetal
+
 gatus_storage_type: memory
-gatus_deployment: container
+gatus_deployment: baremetal
 gatus_discord_webhook: "{{ vault_discord_critical_webhook }}"
 gatus_failure_threshold: 2
 gatus_failure_critical_threshold: 1
@@ -150,7 +152,7 @@ gatus_endpoints:
   - name: pihole-hoth
     url: "{{ hostvars['rpi-dns'].ansible_host }}"
     group: infrastructure
-    interval: 1m
+    interval: 5m
     dns:
       query-name: "cloudflare.com"
       query-type: "A"

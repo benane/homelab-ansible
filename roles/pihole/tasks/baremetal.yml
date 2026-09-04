@@ -1,2 +1,43 @@
 ---
 # Container zuerst, danach dann Baremetal
+- name: Installationspfad prüfen
+  ansible.builtin.stat:
+    path: /usr/bin/pihole-FTL
+  register: pihole_install
+
+- name: Prüfen ob Pihole installiert ist
+  ansible.builtin.assert:
+    that:
+      - pihole_install.stat.exists
+    fail_msg: "Pihole ist nicht installiert. Bitte zuerst installieren."
+
+- name: Overrideverzeichnis anlegen
+  ansible.builtin.file:
+    path: /etc/systemd/system/pihole-FTL.service.d
+    state: directory
+
+- name: Override schreiben
+  ansible.builtin.template:
+    src: override.conf.j2
+    dest: /etc/systemd/system/pihole-FTL.service.d/override.conf
+    mode: "0644"
+    owner: root
+  notify: pihole-FTL neu starten
+  tags: [pihole-override]
+  
+- name: ENV Konfig schreiben
+  ansible.builtin.template:
+    src: pihole-FTL.env.j2
+    dest: /etc/pihole/pihole-FTL.env
+    mode: "0600"
+    owner: root
+  no_log: true
+  notify: pihole-FTL neu starten
+  tags: [pihole-config]
+
+- name: Pihole-FTL service starten
+  ansible.builtin.systemd:
+    name: pihole-FTL.service
+    state: started
+    enabled: true
+  tags: [pihole-service]

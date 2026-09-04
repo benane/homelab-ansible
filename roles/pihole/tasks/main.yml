@@ -1,2 +1,5 @@
 ---
 - import_tasks: container.yml
+  when: pihole_deployment == 'container'
+- import_tasks: baremetal.yml
+  when: pihole_deployment == 'baremetal'

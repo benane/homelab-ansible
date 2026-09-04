@@ -1,5 +1,6 @@
 ---
 pihole_image: "docker.io/pihole/pihole:2026.07.2"   # Tag pinnen, nicht latest
 pihole_data_dir: /var/lib/pihole
+pihole_deployment: baremetal
 pihole_max_db_days: 30
 pihole_ntp_enabled: false
