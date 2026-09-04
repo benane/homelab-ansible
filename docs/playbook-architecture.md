@@ -67,6 +67,17 @@ Bündeln.
 separates Playbook und wird *nicht* in `site.yml` eingehängt – `site.yml` ist für
 Maschinen, die schon existieren.
 
+**Platzierung (Node + Storage) steht im Inventory, nicht im Playbook.**
+`containers/bootstrap.yml` baut jeden Wert nach demselben Muster:
+`ct_<x> = hostvars[...].container_<x> | default(proxmox_default_<x>)`. Die
+`proxmox_default_*` liegen in `inventory/group_vars/all/proxmox.yml`
+(`proxmox_default_node`, `proxmox_default_storage`, …), der Host überschreibt sie
+bei Bedarf per `container_node` / `container_storage` in `hosts.yml`. So landet ein
+Container ohne Extra-Angabe auf der Default-Node im Default-Storage, und ein
+Umzug (z. B. mosquitto/zigbee2mqtt auf `Corellia` + `nvme-zfs`) ist eine
+Inventory-Zeile, kein Playbook-Eingriff. Merksatz aus §1: das Inventory
+beschreibt *wo* eine Maschine läuft.
+
 ---
 
 ## 3. Aufbau einer Rolle – und warum es „nur" `tasks/main.yml` gibt

@@ -172,6 +172,8 @@ Ablauf:
       `/etc/modules-load.d/` per Ansible fixieren
 - [ ] `03_monitoring.yml` umbenennen (späte Nummer) und in `site.yml` einhängen
 - [ ] `vm-hassio` klären: apt-fähiges OS oder HAOS? Ggf. aus `monitoring_targets`
-      (und aus `virtual_machines`-basierten Bootstrap-Phasen) nehmen
+      (und aus `virtual_machines`-basierten Bootstrap-Phasen) nehmen.
+      Läuft seit ~2026-09 physisch auf `Corellia` (mit LXC 208/213) – wird von
+      Ansible aber (noch) nicht provisioniert, daher heute nur Doku-Notiz
 - [ ] `node_exporter`: `defaults/main.yml` + `/etc/default`-Template, Firewall-Port
       nur für den VictoriaMetrics-Host

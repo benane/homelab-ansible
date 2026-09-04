@@ -9,6 +9,7 @@
     ct_ip: "{{ ct.ansible_host }}"
     ct_mac: "{{ ct.container_mac | default(proxmox_default_mac_prefix + ('%02X' | format(ct_vmid | int))) }}"
     ct_disk: "{{ ct.container_disk | default(proxmox_default_disk) }}"
+    ct_storage: "{{ ct.container_storage | default(proxmox_default_storage) }}"
     ct_cores: "{{ ct.container_cores | default(proxmox_default_cores) }}"
     ct_memory: "{{ ct.container_memory | default(proxmox_default_memory) }}"
     ct_template: "{{ ct.container_ostemplate | default(proxmox_default_template) }}"
@@ -31,7 +32,7 @@
         ostemplate: "{{ ct_template }}"
         cmode: console
         pool: "{{ proxmox_default_pool }}"
-        disk: "local-lvm:{{ ct_disk }}"
+        disk: "{{ ct_storage }}:{{ ct_disk }}"
         cores: "{{ ct_cores }}"
         memory: "{{ ct_memory }}"
         netif:

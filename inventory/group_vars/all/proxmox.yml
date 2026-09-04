@@ -2,6 +2,7 @@ proxmox_api_host: 172.16.10.10
 proxmox_api_user: ansible@pve
 proxmox_api_token_id: ansible-automation
 proxmox_ansible_pubkey_path: ~/.ssh/id_ed25519_ansible.pub
+proxmox_default_storage: local-lvm
 proxmox_default_disk: 4
 proxmox_default_cores: 1
 proxmox_default_memory: 1024
