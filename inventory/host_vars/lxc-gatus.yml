@@ -302,7 +302,7 @@ gatus_endpoints:
       - "[BODY] != 0.0.0.0"
     alerts:
     - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
+      failure-threshold: 3
       send-on-resolved: true
 
   - name: pihole-mustafar
@@ -317,7 +317,7 @@ gatus_endpoints:
       - "[BODY] != 0.0.0.0"
     alerts:
     - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
+      failure-threshold: 3
       send-on-resolved: true
 
 gatus_maintenance:

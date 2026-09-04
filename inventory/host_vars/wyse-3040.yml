@@ -159,7 +159,7 @@ gatus_endpoints:
       - "[BODY] != 0.0.0.0"
     alerts:
     - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
+      failure-threshold: 3
       send-on-resolved: true
 
 pihole_max_db_days: 7
