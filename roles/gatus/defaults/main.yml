@@ -6,7 +6,7 @@ gatus_config_dir: /etc/gatus
 gatus_data_dir: /var/lib/gatus
 gatus_web_port: 8080
 gatus_storage_type: memory
-gatus_deployment: container
+gatus_deployment: baremetal
 gatus_user: gatus
 gatus_discord_webhook: "{{ vault_discord_critical_webhook }}"
 gatus_failure_threshold: 3
