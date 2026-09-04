@@ -7,6 +7,7 @@ common_base_packages:
   - git
   - htop
   - python3
+  - iperf3
 
 # Standard-Shell für neue User
 common_default_shell: /bin/bash
