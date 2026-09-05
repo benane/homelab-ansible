@@ -72,7 +72,17 @@ gatus_external_endpoints:
         failure-threshold: "{{ gatus_failure_critical_threshold }}"
         send-on-resolved: true
 
-  - name: vzdump_lxc
+  - name: vzdump_alderaan
+    group: backups
+    token: "${GATUS_HEARTBEAT_TOKEN}"
+    heartbeat:
+      interval: 25h
+    alerts:
+      - type: discord
+        failure-threshold: "{{ gatus_failure_critical_threshold }}"
+        send-on-resolved: true
+
+  - name: vzdump_corellia
     group: backups
     token: "${GATUS_HEARTBEAT_TOKEN}"
     heartbeat:
