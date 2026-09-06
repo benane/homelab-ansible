@@ -168,10 +168,15 @@ neu – Key-Login als `ansible` funktioniert dann, Konsole als Fallback.
    Backup-Heartbeats), systemd-Unit. `gatus`-Rolle mit `gatus_deployment: baremetal`
    in `host_vars/wyse-3040.yml` (Default der Rolle ist `container`). Ablauf des
    Umzugs siehe **Gatus-Cutover auf dem Wyse** unten.
-4. **Pi-hole bare-metal (v6)**: FTL per Paket-Repo, `pihole.toml` +
-   Custom-DNS/CNAME-Records aus Vault bzw. `group_vars` templaten, statt
-   `deploy.sh`-rsync. „Kein git clone auf dem Host" bleibt – Ansible pusht die
-   Dateien. Danach Podman-Quadlet `pihole` + `/var/lib/pihole` entfernen.
+4. **Pi-hole bare-metal (v6)**: offizieller Installer **einmal von Hand** (kein
+   apt-Repo; die ~2,5k Zeilen `basic-install.sh` baut man nicht in Ansible nach).
+   Danach besitzt die `pihole`-Rolle nur die Config: `FTLCONF_*`-Zeilen in
+   `/etc/pihole/pihole-FTL.env` (Port des Quadlet-`Environment=`-Blocks) plus ein
+   systemd-Drop-in, das `pihole-FTL.service` diese Env-Datei einlesen lässt.
+   `pihole.toml` bleibt FTL überlassen – FTL schreibt die Datei selbst um, ein
+   Template würde bei jedem Lauf driften. `pihole_deployment` steuert den
+   Rollen-Zweig (wie `gatus_deployment`). Ablauf siehe **Pihole-Cutover auf dem
+   Wyse** unten.
 5. **Container-Runtime abbauen**: sobald `pihole` und `gatus` bare-metal laufen,
    `podman` deinstallieren, `/etc/containers/systemd/` aufräumen, `wyse-3040` aus
    `docker_hosts` nehmen. Die `docker_host`-Rolle greift dann nicht mehr.
@@ -228,6 +233,94 @@ Container komplett abräumen, dann die Rolle laufen lassen.
 
    Das `podman`-Paket selbst bleibt vorerst – das fällt erst mit dem Pi-hole-Umzug
    (Punkt 5 der Liste).
+
+### Pihole-Cutover auf dem Wyse (Einmal-Handschritt)
+
+Wie bei Gatus beschreibt die `pihole`-Rolle nur den **Zielzustand** (bare-metal
+`pihole-FTL` läuft, Config über `FTLCONF_*`-Env + Drop-in). Der Podman-Container
+und der Installer-Lauf selbst sind Migrations-Handlungen, nicht Ansible.
+
+**Warum die Reihenfolge zählt:** Der Podman-`pihole` hält `:53` und `:80`
+(`Network=host`). Installer und `pihole-FTL` wollen dieselben Ports – also erst den
+Container komplett abräumen, dann installieren. `baremetal.yml` hat einen `assert`
+auf `/usr/bin/pihole-FTL`: läuft der Installer nicht vorher, bricht die Rolle mit
+klarer Meldung ab (statt halb zu konfigurieren).
+
+Der RPi-Primary (`172.16.10.40`) bleibt die ganze Zeit oben – der Wyse ist nur
+Secondary. Trotzdem eine ruhige Zeit wählen; Clients mit nur einem DNS-Eintrag auf
+`.60` sind währenddessen blind.
+
+1. **Host-Var setzen und committen:** `pihole_deployment: baremetal` in
+   `inventory/host_vars/wyse-3040.yml`, und den `container`-Wert aus `hosts.yml`
+   ziehen, damit die Variable an *einer* Stelle lebt (wie `gatus_deployment`).
+
+2. **Podman-Container abräumen** (root/sudo auf dem Wyse):
+
+   ```bash
+   systemctl stop pihole.service
+   rm /etc/containers/systemd/pihole.container
+   systemctl daemon-reload
+   systemctl status pihole.service        # "could not be found"
+   podman ps -a                           # gestoppter 'systemd-pihole'?
+   podman rm systemd-pihole               # falls vorhanden
+   podman rmi docker.io/pihole/pihole:2026.07.2
+   ss -tulpn | grep -E ':53|:80'          # muss jetzt frei sein
+   ```
+
+3. **`systemd-resolved` prüfen:** hält es noch `:53` (`DNSStubListener`)? Auf dem
+   Wyse ist `/etc/resolv.conf` schon bewusst statisch (`1.1.1.1` + `172.16.10.40`,
+   nicht der `127.0.0.53`-Stub) – meist ist da nichts zu tun. Falls doch: Stub aus
+   per Drop-in unter `/etc/systemd/resolved.conf.d/`. `/etc/resolv.conf` bleibt
+   statisch – der Host darf **nicht** auf sein eigenes Pi-hole zeigen (Henne/Ei
+   beim Boot).
+
+4. **Installer von Hand:**
+
+   ```bash
+   curl -sSL https://install.pihole.net -o /tmp/pihole-install.sh
+   less /tmp/pihole-install.sh            # einmal drüberschauen – root-Script
+   sudo bash /tmp/pihole-install.sh
+   ```
+
+   Interaktive Fragen: Upstream-DNS / Blocklisten / DB-Tage / NTP sind egal – die
+   überschreibt die Rolle gleich per `FTLCONF_*` (das Env hat Vorrang vor
+   `pihole.toml`, auch fürs Admin-Passwort). Wichtig nur: Web-Interface aktivieren,
+   Interface `eth0`, statische IP bestätigen.
+   Danach: `systemctl status pihole-FTL.service` → active; `ss -tulpn | grep :53`
+   → nur noch `pihole-FTL`.
+
+5. **Rolle anwenden** (Playbook zielt auf `failsafe_hosts` = nur Wyse, `--limit`
+   zur Sicherheit):
+
+   ```bash
+   ansible-playbook playbooks/08c_pihole.yml --limit wyse-3040 --check --diff
+   ansible-playbook playbooks/08c_pihole.yml --limit wyse-3040
+   ```
+
+   Schreibt `/etc/pihole/pihole-FTL.env` +
+   `/etc/systemd/system/pihole-FTL.service.d/override.conf`, dann `daemon-reload`
+   + Restart über den Handler.
+
+6. **Verifizieren:**
+
+   ```bash
+   systemctl cat pihole-FTL.service                        # Drop-in mit EnvironmentFile= sichtbar
+   systemctl show pihole-FTL.service -p EnvironmentFiles    # zeigt /etc/pihole/pihole-FTL.env
+   dig @127.0.0.1 example.com +short                        # Auflösung geht (unbound-Upstream)
+   dig @172.16.10.60 doubleclick.net +short                # geblockt -> 0.0.0.0
+   ```
+   Web-UI: `http://172.16.10.60/admin`, Login mit dem Vault-Passwort.
+
+7. **Podman endgültig weg** (jetzt läuft kein Container mehr auf der Box):
+
+   ```bash
+   apt-get purge --autoremove podman
+   rm -rf /var/lib/pihole                 # alte Container-Volume-Daten
+   rmdir /etc/containers/systemd 2>/dev/null || true
+   ```
+
+   Danach `wyse-3040` aus `docker_hosts` in `hosts.yml` nehmen. Damit ist
+   „Podman verlässt die Box" abgehakt.
 
 ### Inventory-Endzustand
 
