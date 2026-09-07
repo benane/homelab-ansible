@@ -20,8 +20,31 @@
       - cloudflared
     state: present
 
-- name: cloudflared als Service registrieren (Tunnel-Token)
-  ansible.builtin.command:
-    cmd: "cloudflared service install {{ vault_cloudflared_tunnel_token }}"
-    creates: /etc/systemd/system/cloudflared.service
+- name: Konfigurationsverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ cloudflared_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Credentials-JSON schreiben
+  ansible.builtin.copy:
+    content: "{{ vault_cloudflared_credentials_json }}"
+    dest: "{{ cloudflared_credentials_file }}"
+    mode: "0600"
+  notify: cloudflared neu starten
   no_log: true
+
+- name: Konfiguration schreiben
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ cloudflared_config_dir }}/config.yml"
+    mode: "0644"
+  notify: cloudflared neu starten
+  tags: [cloudflared-config]
+
+- name: cloudflared als Service registrieren
+  ansible.builtin.command:
+    cmd: "cloudflared service install"
+    creates: /etc/systemd/system/cloudflared.service
