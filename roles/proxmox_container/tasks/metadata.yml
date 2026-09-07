@@ -1,0 +1,11 @@
+---
+- name: Tags setzen
+  community.proxmox.proxmox:
+    node: "{{ container_node }}"
+    vmid: "{{ container_vmid }}"
+    hostname: "{{ system_hostname | default(inventory_hostname) }}"
+    cmode: console
+    tags: >-
+      {{ container_default_tags
+        + ([container_role] if container_role is defined else [])
+        + (container_tags | default([])) }}

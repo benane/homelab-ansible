@@ -1,0 +1,22 @@
+---
+- name: Container erstellen
+  community.proxmox.proxmox:
+    node: "{{ container_node }}"
+    vmid: "{{ container_vmid}}"
+    hostname: "{{ system_hostname | default(inventory_hostname) }}"
+    ostemplate: "{{ container_template }}"
+    cmode: console
+    pool: "{{ container_pool }}"
+    disk: "{{ container_storage }}:{{ ct_disk }}"
+    cores: "{{ ct_cores }}"
+    memory: "{{ ct_memory }}"
+    netif:
+      net0: "name=eth0,bridge=vmbr0,ip={{ ansible_host }}/24,gw={{ proxmox_default_gateway }},hwaddr={{ container_mac }}"
+    pubkey: "{{ lookup('file', proxmox_ansible_pubkey_path) }}"
+    onboot: true
+
+- name: Container starten
+  community.proxmox.proxmox:
+    vmid: "{{ container_vmid }}"
+    node: "{{ container_node }}"
+    state: started

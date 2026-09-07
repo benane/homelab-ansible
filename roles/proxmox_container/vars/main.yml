@@ -1,0 +1,5 @@
+---
+ct_profile: "{{ container_profiles[container_profile] }}"
+ct_cores:   "{{ container_cores | default(ct_profile.cores) }}"
+ct_memory:  "{{ container_memory | default(ct_profile.memory) }}"
+ct_disk:    "{{ container_disk | default(ct_profile.disk) }}"

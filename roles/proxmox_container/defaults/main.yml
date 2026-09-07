@@ -1,0 +1,13 @@
+---
+container_default_tags:
+  - ansible
+container_profiles:
+  small:  { cores: 2, memory: 1024, disk: 8 }
+  medium: { cores: 2, memory: 2048, disk: 16 }
+  large:  { cores: 4, memory: 4096, disk: 32 }
+container_profile: small
+container_template: "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst"
+container_storage: local-lvm
+container_pool: "{{ proxmox_default_pool }}"
+container_node: "{{ proxmox_default_node }}"
+container_mac: "{{ proxmox_default_mac_prefix + ('%02X' | format(container_vmid | int)) }}"
