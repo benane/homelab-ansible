@@ -1,7 +1,10 @@
 # Wyse „Mustafar" – Bootstrap & Migrationsplan
 
-Handoff-Dokument. Der Proxmox-Cluster-Teil (`site.yml` gegen beide PVE-Nodes) ist
-durch und committet. Nächster Schritt: den Wyse unter Ansible-Verwaltung bringen.
+Handoff-Dokument. **Migration komplett abgeschlossen (Stand 2026-09-07).** Der
+Wyse ist unter Ansible-Verwaltung (Bootstrap + Hardening durch, `ansible`-User +
+Key-Login aktiv), eMMC-Entlastung/Unbound/node-exporter/Gatus/Pi-hole laufen alle
+bare-metal, Docker und Podman sind vollständig von der Box runter. Dieses
+Dokument bleibt als Referenz/Runbook stehen (z. B. für einen Re-Bootstrap).
 
 Verwandte Docs: `playbook-architecture.md`, `disk-prep.md`, `cluster-join-runbook.md`.
 
@@ -13,35 +16,47 @@ Verwandte Docs: `playbook-architecture.md`, `disk-prep.md`, `cluster-join-runboo
   Atom x5. IP **172.16.10.60**, `system_hostname: Mustafar`.
 - **Bewusst außerhalb des Proxmox-Clusters** – „Independence-Tier": DNS,
   Monitoring und Cluster-Quorum sollen einen kompletten Proxmox-Ausfall überleben.
-- Docker-Host für: Secondary Pi-hole, eigener Unbound, Uptime Kuma, node-exporter.
+- War Docker-Host für: Secondary Pi-hole, eigener Unbound, Uptime Kuma,
+  node-exporter. Docker ist inzwischen komplett runter – siehe Bestandsaufnahme.
 - **corosync-qnetd** (QDevice fürs 2-Node-Cluster) läuft hier bereits – vom
   `pvecm qdevice setup 172.16.10.60`. **Nicht kaputt machen.**
-- Zugang: `benedikt@172.16.10.60` per SSH (persönlicher User, mit sudo).
-  Ein Ansible-`ansible`-User existiert noch **nicht**. In `/root/.ssh/authorized_keys`
-  liegt nur Alderaans root-Key (vom qdevice-Setup), **nicht** der Control-Key.
+- Zugang: `ansible@172.16.10.60` per Key (`~/.ssh/id_ed25519_ansible`), Sudo ohne
+  Passwort. Persönlicher User `benedikt` mit sudo bleibt als Fallback.
+  `PasswordAuthentication no` + `PermitRootLogin prohibit-password` sind aktiv.
 
-### Bestandsaufnahme (Stand Discovery)
+### Bestandsaufnahme (Stand 2026-09-07)
 
-- **Keine eMMC-Entlastung aktiv**: kein `log2ram`/`zram`/`folder2ram`, fstab
-  Standard (kein `noatime`), journald **persistent**, **Swap auf der eMMC**
-  (`mmcblk0p3`, 754 MB). Das früher mal eingestellte ging bei einer Neuinstallation
-  (~2026-08) verloren.
-- **USB-SSD-Saga (2026-08-20)**: geplante 64-GB-USB-SSD als Docker data-root nach
-  3 Disconnect-/0-Byte-Vorfällen verworfen (Verdacht: USB-Power am Wyse-Port;
-  Platte/Kabel/Enclosure am MacBook sauber). Docker läuft jetzt direkt auf eMMC,
-  fstab-Eintrag nur auskommentiert. → **kein verlässlicher externer Storage.**
-- **Docker-Container**: `pihole` (:53/:80), `unbound` (`dns_net` 172.28.0.0/24,
-  rekursiv), `uptime-kuma` (:3001), `node-exporter` (:9100).
+- **eMMC-Entlastung aktiv**: `zram-tools` läuft, Swap liegt auf `/dev/zram0`
+  (965 MB, `zramswap.service`), die eMMC-Swap-Partition ist per `noauto` in der
+  fstab stillgelegt (Marker `BEGIN/END ANSIBLE emmc_saver disk-swap`). `noatime`
+  steht auf `/`. journald ist per Drop-in (`/etc/systemd/journald.conf.d/emmc.conf`)
+  auf `SystemMaxUse=50M` gedeckelt (Storage bleibt `persistent`, nicht `volatile`).
+  eMMC-Auslastung: 2,2 GB von 5,8 GB.
+- **Docker ist komplett deinstalliert** (kein Paket, kein Binary mehr). Die
+  USB-SSD-Idee von 2026-08-20 (Disconnect-/0-Byte-Vorfälle) ist damit erledigt
+  gegenstandslos – kein externer Storage mehr nötig, alles läuft direkt auf eMMC.
+- **Unbound, node-exporter (`prometheus-node-exporter`) und Gatus laufen bereits
+  bare-metal**, aktiv, kein Podman-Quadlet mehr dafür. Uptime Kuma ist damit
+  endgültig durch Gatus ersetzt.
+- **Nur noch Pi-hole hängt in Podman**: `/etc/containers/systemd/pihole.container`
+  existiert noch, das Quadlet lauscht via `--network host` auf `:53`/`:80`.
+  `host_vars/wyse-3040.yml` setzt bereits `pihole_deployment: baremetal` – die
+  passende `pihole`-Rolle (`playbooks/08c_pihole.yml`) ist fertig. Offen: alter
+  Podman-Container abräumen, Installer von Hand laufen lassen, Rolle drüber.
+  Ablauf siehe **Pihole-Cutover auf dem Wyse** unten.
+- **Aufräumen im Inventory nötig**: `inventory/hosts.yml` hat am Host `wyse-3040`
+  noch eine veraltete `pihole_deployment: container`-Zeile stehen (überschrieben
+  von `host_vars/wyse-3040.yml`, aber inkonsistent) – gehört raus, siehe Schritt 1
+  im Cutover unten.
 - **`/etc/resolv.conf`**: `nameserver 1.1.1.1` + `nameserver 172.16.10.40` –
   bewusst **nicht** `127.0.0.1`, damit der Host nicht von seinem eigenen
-  Pi-hole-Container abhängt.
-- **Deploy bisher**: kein `git clone` auf dem Host, stattdessen
-  `./scripts/deploy.sh mustafar` (rsync), `secrets.env` nur lokal.
-- Gelöste Docker-Bugs (Doku, nicht neu aufreißen): Unbound-Port war 5335 statt 53;
+  Pi-hole abhängt. Gilt unverändert auch nach dem Umzug auf bare-metal.
+- Gelöste Docker-Bugs (Doku, nicht neu aufreißen – nur noch relevant falls je
+  wieder Container auf dem Host laufen): Unbound-Port war 5335 statt 53;
   Pi-hole „ignoring query from non-local network" → „Listen on all interfaces,
   permit all origins" (Docker-NAT); doppelte Bridge-Netze mit gleichem Subnetz →
   kompletter Reboot löst es.
-- **Monitoring-Konzept**: mustafar-Kuma ≠ LXC-204-Kuma. Nur Backup-Heartbeats +
+- **Monitoring-Konzept**: mustafar-Gatus ≠ LXC-204-Kuma. Nur Backup-Heartbeats +
   Grundinfra-Pings, keine Doppelüberwachung.
 
 ---
@@ -51,20 +66,25 @@ Verwandte Docs: `playbook-architecture.md`, `disk-prep.md`, `cluster-join-runboo
 Für 7,3 GB eMMC / 2 GB RAM / Failsafe-Tier: **komplett bare-metal.** Kein
 Container-Runtime auf dem Host.
 
-| Dienst | Ziel | Begründung |
-|---|---|---|
-| **node-exporter** | **bare-metal** – vorhandene `node_exporter`-Rolle | Container ist reiner Overhead; löst nebenbei den `:9100`-Konflikt |
-| **unbound** | **bare-metal** – `apt install unbound` + Config-Template | trivial nativ; kein `dns_net`-NAT, keine der o.g. Docker-Bugs mehr |
-| **uptime-kuma** | **durch Gatus ersetzen** (Go-Binary + YAML) | Scope ist eh nur Infra-Pings/Heartbeats = Gatus' Kerngebiet; YAML passt zu Ansible; steht im README-ToDo |
-| **Pi-hole** | **bare-metal** – Pi-hole v6 | v6 ist ein einzelnes FTL-Binary mit eingebautem Webserver – kein lighttpd/php/dnsmasq-Gefrickel mehr, das den Installer früher un-idempotent machte. `pihole.toml` als Template, Rest wie die Container-Variante. |
+| Dienst | Ziel | Begründung | Status |
+|---|---|---|---|
+| **node-exporter** | **bare-metal** – vorhandene `node_exporter`-Rolle | Container ist reiner Overhead; löst nebenbei den `:9100`-Konflikt | ✅ erledigt |
+| **unbound** | **bare-metal** – `apt install unbound` + Config-Template | trivial nativ; kein `dns_net`-NAT, keine der o.g. Docker-Bugs mehr | ✅ erledigt |
+| **uptime-kuma** | **durch Gatus ersetzt** (Go-Binary + YAML) | Scope ist eh nur Infra-Pings/Heartbeats = Gatus' Kerngebiet; YAML passt zu Ansible | ✅ erledigt |
+| **Pi-hole** | **bare-metal** – Pi-hole v6 | v6 ist ein einzelnes FTL-Binary mit eingebautem Webserver – kein lighttpd/php/dnsmasq-Gefrickel mehr, das den Installer früher un-idempotent machte. `pihole.toml` als Template, Rest wie die Container-Variante. | ✅ erledigt |
 
 **Ergebnis:** alles systemd + Ansible-Rollen, **kein Docker/Podman** auf dem Wyse.
-Podman + Quadlet war ein Zwischenschritt (kurz liefen `pihole` und `gatus` so) –
-fällt mit Pi-hole v6 bare-metal und dem Gatus-Binary weg.
+Podman + Quadlet war nur ein Zwischenschritt (kurz liefen `pihole` und `gatus` so)
+– beide sind umgezogen, `podman` ist deinstalliert.
 
 ---
 
 ## 3. Bootstrap-Ablauf
+
+**✅ Erledigt.** Der Ablauf unten ist als Referenz stehen gelassen (falls der Wyse
+je neu aufgesetzt werden muss), ist aber bereits durchgelaufen: `ansible`-User +
+Key-Login funktionieren, Hardening (`PasswordAuthentication no`,
+`PermitRootLogin prohibit-password`) ist aktiv, `corosync-qnetd` unangetastet.
 
 ### 3.1 Voraussetzungen / Repo-Kontext
 
@@ -149,39 +169,36 @@ neu – Key-Login als `ansible` funktioniert dann, Konsole als Fallback.
 
 ### `sbc_tweaks` / `emmc_saver` (eMMC-Schutz, unabhängig von Docker/bare-metal)
 
+**✅ Erledigt** – alle vier Punkte sind auf dem Wyse aktiv (siehe Bestandsaufnahme):
+
 - `zram-tools` → Swap in komprimiertem RAM statt `mmcblk0p3`
-  (danach die Swap-Partition aus fstab, ggf. `swapoff`)
-- journald: `Storage=volatile` **oder** `SystemMaxUse=50M` (drop-in unter
-  `/etc/systemd/journald.conf.d/`)
+  (Swap-Partition per `noauto` aus der fstab-Automatik genommen)
+- journald: `SystemMaxUse=50M` per Drop-in unter `/etc/systemd/journald.conf.d/`
 - `noatime` in `/etc/fstab` für `/`
-- falls Docker bleibt: `/etc/docker/daemon.json` →
-  `{"log-driver":"local","log-opts":{"max-size":"10m","max-file":"3"}}`
+- Docker-Punkt (`daemon.json`) entfällt – Docker ist komplett runter, nie bare
+  geblieben.
 
 ### Dienst-Migration
 
-1. **unbound bare-metal**: `apt install unbound`, Config-Template
-   (rekursiv, wie die Container-Variante), Port 53 auf der/den passenden
-   Adresse(n). Docker-`unbound` + `dns_net` weg.
-2. **node-exporter bare-metal**: `node_exporter`-Rolle auf den Wyse anwenden,
-   Docker-`node-exporter` weg.
-3. **Gatus statt uptime-kuma**: Binary + `config.yaml` (Endpoints = Infra-Pings,
-   Backup-Heartbeats), systemd-Unit. `gatus`-Rolle mit `gatus_deployment: baremetal`
-   in `host_vars/wyse-3040.yml` (Default der Rolle ist `container`). Ablauf des
-   Umzugs siehe **Gatus-Cutover auf dem Wyse** unten.
-4. **Pi-hole bare-metal (v6)**: offizieller Installer **einmal von Hand** (kein
-   apt-Repo; die ~2,5k Zeilen `basic-install.sh` baut man nicht in Ansible nach).
-   Danach besitzt die `pihole`-Rolle nur die Config: `FTLCONF_*`-Zeilen in
-   `/etc/pihole/pihole-FTL.env` (Port des Quadlet-`Environment=`-Blocks) plus ein
-   systemd-Drop-in, das `pihole-FTL.service` diese Env-Datei einlesen lässt.
-   `pihole.toml` bleibt FTL überlassen – FTL schreibt die Datei selbst um, ein
-   Template würde bei jedem Lauf driften. `pihole_deployment` steuert den
-   Rollen-Zweig (wie `gatus_deployment`). Ablauf siehe **Pihole-Cutover auf dem
-   Wyse** unten.
-5. **Container-Runtime abbauen**: sobald `pihole` und `gatus` bare-metal laufen,
-   `podman` deinstallieren, `/etc/containers/systemd/` aufräumen, `wyse-3040` aus
-   `docker_hosts` nehmen. Die `docker_host`-Rolle greift dann nicht mehr.
+1. ✅ **unbound bare-metal**: läuft aktiv, kein Docker-`unbound`/`dns_net` mehr.
+2. ✅ **node-exporter bare-metal**: `prometheus-node-exporter` aktiv, kein
+   Docker-`node-exporter` mehr.
+3. ✅ **Gatus statt uptime-kuma**: läuft aktiv als bare-metal-Service
+   (`gatus_deployment: baremetal` in `host_vars/wyse-3040.yml`). Ablauf war
+   **Gatus-Cutover auf dem Wyse** unten – als Referenz stehen gelassen.
+4. ✅ **Pi-hole bare-metal (v6)**: `pihole-FTL` aktiv, Config über
+   `pihole_deployment: baremetal` in `host_vars/wyse-3040.yml` +
+   `08c_pihole.yml`-Rolle. Ablauf war **Pihole-Cutover auf dem Wyse** unten – als
+   Referenz stehen gelassen.
+5. ✅ **Container-Runtime abgebaut**: `podman` deinstalliert,
+   `/etc/containers/systemd/` und `/var/lib/pihole` (altes Container-Volume) weg,
+   `wyse-3040` aus `docker_hosts` in `hosts.yml` entfernt.
 
 ### Gatus-Cutover auf dem Wyse (Einmal-Handschritt)
+
+**✅ Erledigt (2026-09-04ff., siehe Commits `a9a1bf4`/`852fc97`).** Gatus läuft
+bare-metal, aktiv. Abschnitt bleibt als Vorlage für den Pi-hole-Umzug (gleiches
+Muster) und für einen etwaigen Re-Bootstrap stehen.
 
 Die `gatus`-Rolle beschreibt nur den **Zielzustand** (bare-metal Gatus läuft). Das
 Abräumen des alten Podman-Containers ist eine Migrations-Handlung und steht
@@ -236,6 +253,12 @@ Container komplett abräumen, dann die Rolle laufen lassen.
 
 ### Pihole-Cutover auf dem Wyse (Einmal-Handschritt)
 
+**✅ Erledigt (2026-09-07).** `pihole-FTL` läuft bare-metal, Podman/Quadlet/altes
+Container-Volume sind weg, Inventory bereinigt (`pihole_deployment` lebt nur noch
+in `host_vars/wyse-3040.yml`, `wyse-3040` ist aus `docker_hosts` raus). Blocklisten
+kommen separat über Nebula-Sync vom Primary (`172.16.10.40`) – das ist kein Teil
+dieses Cutovers. Abschnitt bleibt als Referenz stehen.
+
 Wie bei Gatus beschreibt die `pihole`-Rolle nur den **Zielzustand** (bare-metal
 `pihole-FTL` läuft, Config über `FTLCONF_*`-Env + Drop-in). Der Podman-Container
 und der Installer-Lauf selbst sind Migrations-Handlungen, nicht Ansible.
@@ -250,9 +273,10 @@ Der RPi-Primary (`172.16.10.40`) bleibt die ganze Zeit oben – der Wyse ist nur
 Secondary. Trotzdem eine ruhige Zeit wählen; Clients mit nur einem DNS-Eintrag auf
 `.60` sind währenddessen blind.
 
-1. **Host-Var setzen und committen:** `pihole_deployment: baremetal` in
-   `inventory/host_vars/wyse-3040.yml`, und den `container`-Wert aus `hosts.yml`
-   ziehen, damit die Variable an *einer* Stelle lebt (wie `gatus_deployment`).
+1. ✅ **Host-Var bereinigt:** `pihole_deployment: baremetal` lebt nur noch in
+   `inventory/host_vars/wyse-3040.yml`; die veraltete
+   `pihole_deployment: container`-Zeile am Host-Eintrag `wyse-3040` in
+   `inventory/hosts.yml` (unter `thin_clients`) ist entfernt (wie `gatus_deployment`).
 
 2. **Podman-Container abräumen** (root/sudo auf dem Wyse):
 
@@ -276,8 +300,13 @@ Secondary. Trotzdem eine ruhige Zeit wählen; Clients mit nur einem DNS-Eintrag 
 
 4. **Installer von Hand:**
 
+   **Achtung Stolperfalle:** Domain ist `pi-hole.net` **mit** Bindestrich.
+   `pihole.net` (ohne Bindestrich) ist eine fremde, geparkte Domain und liefert
+   einen kaputten/self-signed TLS-Handshake – sieht wie ein Netzwerkproblem aus,
+   ist aber nur ein Tippfehler.
+
    ```bash
-   curl -sSL https://install.pihole.net -o /tmp/pihole-install.sh
+   curl -sSL https://install.pi-hole.net -o /tmp/pihole-install.sh
    less /tmp/pihole-install.sh            # einmal drüberschauen – root-Script
    sudo bash /tmp/pihole-install.sh
    ```
@@ -324,6 +353,8 @@ Secondary. Trotzdem eine ruhige Zeit wählen; Clients mit nur einem DNS-Eintrag 
 
 ### Inventory-Endzustand
 
+**✅ Erreicht.**
+
 - `wyse-3040` in `debian_machines` (bekommt `common` + `hardening`)
 - `wyse-3040` **nicht mehr** in `docker_hosts` (kein Container-Runtime mehr)
 - eigene Gruppe/Playbook für den Failsafe-Stack (unbound, gatus, pihole,
@@ -334,6 +365,22 @@ Secondary. Trotzdem eine ruhige Zeit wählen; Clients mit nur einem DNS-Eintrag 
 ---
 
 ## 5. Nicht vergessen
+
+- **Netzwerkweiter Secondary-DNS lief bisher NICHT über den Wyse.** Unifi-DHCP
+  (alle 6 VLANs: Management, Servers, IoT, Guest, IoT untrusted, Clients) hatte
+  einheitlich `dhcpd_dns_2 = 172.16.10.203` – das ist `lxc-pihole` (VMID 203, alte
+  Helper-Script-Installation auf Alderaan), nicht der Wyse. Das unterlief den
+  ganzen Sinn der Independence-Tier (Secondary stirbt bei Proxmox-Ausfall mit).
+  Proxmox-Nodes und LXC-Container selbst waren davon nicht betroffen – die
+  bekommen DNS schon korrekt über die Ansible-verwaltete `dns_resolvers`-Gruppe
+  bzw. Vererbung vom Node. Fix (manuell in der Unifi-UI, Stand 2026-09-07 in
+  Arbeit): `dhcpd_dns_2` in allen 6 VLANs auf `172.16.10.60` (Wyse) ändern,
+  `.203` rausnehmen.
+- **`lxc-pihole` (VMID 203) danach abbauen** – läuft vorerst weiter, ist aber
+  ohne DHCP-Eintrag funktionslos für den Rest des Netzes. **Plan:** nach ein
+  paar Tagen im Admin-Interface von 203 (Top Clients / Query-Log) prüfen, ob
+  noch wer anfragt (z. B. Geräte mit altem DHCP-Lease oder manuell gesetztem
+  DNS) – wenn nicht, LXC 203 abbauen.
 
 - `secrets.env` / Vault: Pi-hole-Webpassword, ggf. Gatus-Tokens → in
   `group_vars/all/vault.yml` bzw. `host_vars`.
