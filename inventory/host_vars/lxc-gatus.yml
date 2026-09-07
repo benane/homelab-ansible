@@ -179,18 +179,6 @@ gatus_endpoints:
         failure-threshold: "{{ gatus_failure_threshold }}"
         send-on-resolved: true
 
-  - name: cloudflared-edge
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:2000/ready"
-    group: unraid
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY].readyConnections > 0"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
   - name: immich
     url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8088/api/server/ping"
     group: unraid
