@@ -82,8 +82,20 @@ gatus_endpoints:
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
 
-  - name: cloudflared
-    url: "http://172.16.10.212:2000/ready"
+  - name: cloudflared-a
+    url: "http://{{ hostvars['lxc-cloudflared-a'].ansible_host }}:2000/ready"
+    group: proxmox
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[BODY].readyConnections > 0"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
+  - name: cloudflared-b
+    url: "http://{{ hostvars['lxc-cloudflared-b'].ansible_host }}:2000/ready"
     group: proxmox
     interval: 1m
     conditions:
