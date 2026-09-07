@@ -6,7 +6,9 @@ container_profiles:
   medium: { cores: 2, memory: 2048, disk: 16 }
   large:  { cores: 4, memory: 4096, disk: 32 }
 container_profile: small
-container_template: "local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst"
+container_template_name: "debian-13-standard_13.6-1_amd64.tar.zst"
+container_template_storage: "local"
+container_template: "{{ container_template_storage }}:vztmpl/{{ container_template_name }}"
 container_storage: local-lvm
 container_pool: "{{ proxmox_default_pool }}"
 container_node: "{{ proxmox_default_node }}"

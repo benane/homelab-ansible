@@ -7,7 +7,14 @@
       api_token_id: "{{ proxmox_api_token_id }}"
       api_token_secret: "{{ vault_proxmox_api_token_secret }}"
       validate_certs: false
+    community.proxmox.proxmox_template:
+      api_host: "{{ proxmox_api_host }}"
+      api_user: "{{ proxmox_api_user }}"
+      api_token_id: "{{ proxmox_api_token_id }}"
+      api_token_secret: "{{ vault_proxmox_api_token_secret }}"
+      validate_certs: false
   block:
+  - import_tasks: template.yml
   - import_tasks: create.yml
   - import_tasks: metadata.yml
   # - import_tasks: dns.yml

@@ -1,0 +1,8 @@
+---
+#pveam update schritt zuerst!
+
+- name: Download pinned template
+  community.proxmox.proxmox_template:
+    node: "{{ container_node }}"
+    template: "{{ container_template_name }}"
+    storage: "{{ container_template_storage }}"
