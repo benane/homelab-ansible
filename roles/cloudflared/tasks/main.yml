@@ -48,3 +48,17 @@
   ansible.builtin.command:
     cmd: "cloudflared service install"
     creates: /etc/systemd/system/cloudflared.service
+
+- name: Ingress Einträge in den DNS schreiben
+  community.general.cloudflare_dns:
+    type: CNAME
+    value: "{{ cloudflared_tunnel_id }}.cfargotunnel.com"
+    zone: "{{ external_domain }}"
+    record: "{{ item.hostname }}"
+    api_token: "{{ vault_cloudflare_api_token }}"
+    proxied: true
+    state: present
+  loop: "{{ cloudflared_ingress | selectattr('hostname', 'defined') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true

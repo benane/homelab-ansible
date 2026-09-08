@@ -1,26 +1,14 @@
 cloudflared_ingress:
-  - hostname: paperless.ledermann.cc
-    service: https://172.16.10.208
-    originRequest:
-      originServerName: paperless.ledermann.cc
-  - hostname: wattwarriors.ledermann.cc
-    service: https://172.16.10.208
-    originRequest:
-      originServerName: wattwarriors.ledermann.cc
-  - hostname: status.ledermann.cc
-    service: https://172.16.10.208
-    originRequest:
-      originServerName: status.ledermann.cc
-  - hostname: auth.ledermann.cc
-    service: https://172.16.10.208
-    originRequest:
-      originServerName: auth.ledermann.cc
-  - hostname: immich.ledermann.cc
-    service: https://172.16.10.208
-    originRequest:
-      originServerName: immich.ledermann.cc
-  - hostname: seer.ledermann.cc
-    service: https://172.16.10.208
-    originRequest:
-      originServerName: seer.ledermann.cc
+  - hostname: "paperless.{{ external_domain }}"
+    service: "{{ cloudflared_default_origin }}"
+  - hostname: "wattwarriors.{{ external_domain }}"
+    service: "{{ cloudflared_default_origin }}"
+  - hostname: "status.{{ external_domain }}"
+    service: "{{ cloudflared_default_origin }}"
+  - hostname: "auth.{{ external_domain }}"
+    service: "{{ cloudflared_default_origin }}"
+  - hostname: "immich.{{ external_domain }}"
+    service: "{{ cloudflared_default_origin }}"
+  - hostname: "seer.{{ external_domain }}"
+    service: "{{ cloudflared_default_origin }}"
   - service: http_status:404
