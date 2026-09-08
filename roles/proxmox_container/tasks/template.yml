@@ -1,6 +1,4 @@
 ---
-#pveam update schritt zuerst!
-
 - name: Download pinned template
   community.proxmox.proxmox_template:
     node: "{{ container_node }}"
