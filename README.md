@@ -4,10 +4,10 @@
 
 ### Gesamten Bestand konfigurieren
 
-`site.yml` wendet Grundkonfiguration, Hardening, Proxmox-Setup und Netzwerk auf alle bekannten Hosts an. Beliebig oft wiederholbar (idempotent):
+`site.yml` wendet Grundkonfiguration, Hardening, Proxmox-Setup, Monitoring und DNS-Failsafe an. Beliebig oft wiederholbar (idempotent). Ein Guard erzwingt `--limit` – für den kompletten Bestand bewusst `--limit all`:
 
 ```bash
-ansible-playbook playbooks/site.yml
+ansible-playbook playbooks/site.yml --limit all
 ```
 
 ### Einzelnen Container erstellen/konfigurieren
@@ -37,29 +37,31 @@ sudo systemctl restart zigbee2mqtt
 
 Home-Assistant-Geräte sollten danach innerhalb weniger Sekunden wieder "available" werden.
 
-ToDo:
+## ToDo
+
+### Provisioning / Gäste
+
 - backup restore
-- proxmox token und berechtigungen automatisch anlegen?
-- Wrapper-Script für Container-Erstellung (kapselt `-e target_host=` und beim ersten Lauf `-u root`, um Tippfehler zu vermeiden)
-- `container_vmid` dynamisch ermitteln lassen (nächste freie ID ab 201), statt sie fest in `hosts.yml` vorzugeben
-- eventuell Wechsel von Uptime Kuma auf https://gatus.io (Config als YAML statt API/UI – passt besser zu Ansible), bereits auf dem Wyse erfolgt. Heartbeats müssen noch eingerichtet werden. Auch: wie kann die Rolle mit einem LXC wiederverwendet werden?
-- storyline:
-    - cloudflared testen
-    - heartbeats auf gatus
-    - docker vom wyse entfernen
-    - gatus auf lxc + passende endpoints
-    - pihole und unbound baremetal auf rasppi und wyse
-    - nebula_sync via ansible auf unraid
-    - pihole lxc entfernen
-- alle Versionen global sammeln und ein tool dafür, siehe untern
-- cloudflared: von der Token-Methode auf die Config-Datei-Variante wechseln, damit das Routing versioniert in Ansible statt nur im Cloudflare-Dashboard liegt. Referenz: https://github.com/papanito/ansible-role-cloudflared (v.a. `configure_tunnels.yml` fürs Credentials-/Config-Template und `create_routes_dns.yml` für den DNS-Routing-Schritt, der bei dieser Methode zusätzlich nötig ist – Rest der Rolle ist für unseren Fall Overkill, siehe Chat-Review) -> super test für terraform
-- esphome container mit pull der yaml configs aus github repo
-- Container-Provisioning neu strukturieren: `playbooks/containers/bootstrap.yml` wird zur Rolle `proxmox_container` (nur Provisioning: create/start/tags, Defaults in `defaults/main.yml`); später analog `proxmox_vm`. Ein schlankes Orchestrierungs-Playbook (`guest_site.yml`) wählt LXC- vs. VM-Rolle und hängt danach `common` + `hardening` + Service-Rolle an. Service-Rollen bleiben eigenständig, werden **keine** Subrollen. Details: `docs/playbook-architecture.md`
-  - Zwischenstand: Node und Storage sind schon inventory-gesteuert – `container_node` / `container_storage` je Host in `hosts.yml`, Fallback `proxmox_default_node` / `proxmox_default_storage` in `group_vars/all/proxmox.yml`. `bootstrap.yml` legt die Disk als `{{ ct_storage }}:{{ ct_disk }}` an. `lxc-mosquitto` (201) und `lxc-zigbee2mqtt` (202) damit auf `Corellia` + `nvme-zfs` festgenagelt.
-- LXC 208 (`lxc-nginx-proxy`), 213 (`lxc-authentik`) und die HA-VM (`vm-hassio`) laufen physisch schon auf `Corellia`, sind im Inventory aber nur IP-Stubs. Beim Reproduzieren per Ansible: `container_vmid` / `container_role` / `container_node: Corellia` / `container_storage: nvme-zfs` nachziehen.
-- Terraform evaluieren: erst nach Fertigstellung von `site.yml`, dann isoliert mit Cloudflare (DNS/Tunnel) als erstem Anwendungsfall, später ggf. Gast-Erstellung migrieren. Einschätzung und Einstiegsplan: `docs/terraform-evaluation.md`
-- Versionen der neuen Dienste pinnen und Updates verfolgen: zentrale `versions.yml`, Benachrichtigung über newreleases.io/RSS, später Renovate (Dependency Dashboard + Changelog-PRs), optional eigenes HTML-Dashboard mit Repo-vs-installiert-Abgleich. Strategie und Reihenfolge: `docs/version-tracking.md`
-- Gatus-Endpoints dezentralisieren: statt handgepflegter Blöcke in `inventory/host_vars/lxc-gatus.yml` sollen Dienste ihren eigenen Health-Check beisteuern. Generischer Mechanismus in der Gatus-Rolle (z.B. `gatus_endpoint_groups: [{group, port, path, conditions}]`, Template loopt über `groups[...]` + `hostvars[...]`). Zwischenstand: `cloudflared-a`/`-b` sind aktuell zwei explizite Blöcke.
-- Cloudflared-Ingress → DNS automatisch: `cloudflared_ingress` (`group_vars/cloudflared_hosts.yml`) als einzige Quelle. Task in der `cloudflared`-Rolle loopt über die Liste und legt pro `hostname` einen proxied CNAME auf `<tunnel-id>.cfargotunnel.com` an (`community.general.cloudflare_dns_record`, `delegate_to: localhost`). Braucht neuen Cloudflare-API-Token (Zone→DNS→Edit) im Vault. Bisher manuell via `cloudflared tunnel route dns`.
-- Pi-hole-DNS-Einträge: `pihole_cname_records` / `pihole_dns_hosts` in `group_vars/dns_resolvers.yml` sind handgepflegt – gleiche Selbst-Registrierungs-Idee wie bei Gatus/cloudflared. Dabei klären, wie das mit **nebula-sync** zusammenspielt: nebula-sync repliziert aktuell die Pi-hole-v6-Config (Teleporter) vom Primary (`172.16.10.40`) auf die Secondaries. Schreibt Ansible die DNS-Config deklarativ auf **alle** Pi-hole-Instanzen, wird nebula-sync überflüssig – sofern keine manuellen UI-Änderungen mehr passieren. Kein Cronjob nötig: Playbook bei Änderung laufen lassen (git → CI/Hand), nicht kontinuierlich. nebula-sync erst entfernen, wenn „keine manuellen Pi-hole-Edits" als Regel steht.
-- `pveam update` vor Template-Download für frische Nodes: `community.proxmox.proxmox_template` aktualisiert den Appliance-Index nicht; eine neue PVE-Node hat einen veralteten/leeren Index → Download schlägt fehl. `pveam update`-Schritt in `roles/proxmox_container/tasks/template.yml` (oder `proxmox_node`) voranstellen.
+- Proxmox-API-Token und Berechtigungen automatisch anlegen, statt als Handschritt
+- Wrapper-Script für Container-Erstellung (kapselt `-e target_host=` und beim ersten Lauf `-u root`, gegen Tippfehler)
+- `container_vmid` dynamisch (nächste freie ID ab 201): **zurückgestellt**, bis die ganze Kette (Monitoring, Tunnel, DNS, Reverse Proxy) einen Rebuild automatisch nachzieht – sonst mehr Nacharbeit als Nutzen, und Rebuilds werden nicht-deterministisch.
+- Container-Provisioning: Rolle `proxmox_container` steht (create/template/metadata; Node/Storage inventory-gesteuert via `container_node` / `container_storage`, Fallback `proxmox_default_*` in `group_vars/all/proxmox.yml`). **Offen:** schlankes `guest_site.yml`, das LXC- vs. VM-Rolle wählt und danach `common` + `hardening` + Service-Rolle anhängt; analoge Rolle `proxmox_vm`. Service-Rollen bleiben eigenständig. Details: `docs/playbook-architecture.md`
+- LXC 208 (`lxc-nginx-proxy`), 213 (`lxc-authentik`) und die HA-VM (`vm-hassio`) laufen physisch auf `Corellia`, im Inventory nur IP-Stubs. Beim Reproduzieren per Ansible: `container_vmid` / `container_role` / `container_node: Corellia` / `container_storage: nvme-zfs` nachziehen.
+- ESPHome-Container mit Pull der YAML-Configs aus GitHub-Repo
+
+### Netzwerk & externe Dienste
+
+- Cloudflared-Ingress → DNS automatisch: `cloudflared_ingress` (`group_vars/cloudflared_hosts.yml`) ist die einzige Quelle. Task in der `cloudflared`-Rolle loopt über die Einträge **mit `hostname`** (Catch-all `http_status:404` rausfiltern) und legt je einen proxied CNAME auf `<tunnel-id>.cfargotunnel.com` an (`community.general.cloudflare_dns_record`, `delegate_to: localhost`, `run_once`). Braucht neuen Cloudflare-API-Token (Zone→DNS→Edit) im Vault. Bisher manuell via `cloudflared tunnel route dns`.
+    - Nebenaufräumen: `service` / `originServerName` sind 6× dasselbe (npm, `172.16.10.208`) – `cloudflared_default_origin` als Default, pro Eintrag überschreibbar.
+- UniFi-Netzwerk-Config: `roles/unifi_network` ist nur ein Stub, das Playbook `0x_network_setup.yml` wurde gelöscht. Kommt via Terraform (reifer Provider `ubiquiti-community/unifi`, deklarativer Appliance-State) statt Ansible-`uri`-Gepokel.
+- Pi-hole-DNS-Einträge: `pihole_cname_records` / `pihole_dns_hosts` in `group_vars/dns_resolvers.yml` sind handgepflegt – gleiche Selbst-Registrierungs-Idee. Klären, wie das mit **nebula-sync** zusammenspielt: nebula-sync repliziert aktuell die Pi-hole-v6-Config (Teleporter) vom Primary (`172.16.10.40`) auf die Secondaries. Schreibt Ansible die DNS-Config deklarativ auf **alle** Instanzen, wird nebula-sync überflüssig – sofern keine manuellen UI-Änderungen mehr passieren. Kein Cronjob: Playbook bei Änderung laufen lassen (git → CI/Hand). nebula-sync erst entfernen, wenn „keine manuellen Pi-hole-Edits" als Regel steht.
+- nebula-sync via Ansible auf Unraid ausrollen
+
+### Monitoring
+
+- Gatus-Endpoints dezentralisieren: **zurückgestellt**, bis alle überwachten Dienste ansible-verwaltet sind (heute viele bare IPs, arr-Stack auf Unraid ungemanagt). Teil-Umbau jetzt zieht zu viele Kompromisse nach sich (ein Host ≠ ein Endpoint, Gatus-`group` ≠ Inventory-Gruppe, Externes braucht weiter eine handgepflegte Liste). Zielbild: verwaltete Dienste bringen ihre Check-Spec selbst mit (als Daten, nicht als Template-`if`), Gatus-Rolle sammelt + merged + hängt eine explizite externe Restliste an.
+
+### Werkzeuge / Meta
+
+- Terraform evaluieren: nach Fertigstellung `site.yml`, isoliert, Cloudflare (DNS/Tunnel) als erster Fall, dann UniFi, später ggf. Gast-Erstellung. Einstieg: `docs/terraform-evaluation.md`
+- Versionen pinnen und Updates verfolgen: zentrale `versions.yml` (Anfang steht), Benachrichtigung über newreleases.io/RSS, später Renovate (Dependency Dashboard + Changelog-PRs), optional HTML-Dashboard mit Repo-vs-installiert-Abgleich. Strategie: `docs/version-tracking.md`
