@@ -3,3 +3,8 @@
   ansible.builtin.systemd:
     name: pveproxy
     state: restarted
+
+- name: restart pve-exporter
+  ansible.builtin.systemd:
+    name: pve-exporter.service
+    state: restarted

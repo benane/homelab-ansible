@@ -1,2 +1,3 @@
 ---
 pve_exporter_venv: /opt/pve-exporter
+pve_exporter_user: pve-exporter
