@@ -1,0 +1,14 @@
+---
+- name: Download Binary
+  ansible.builtin.get_url:
+    url: "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{{ victoria_version }}/victoria-metrics-{{ victoria_binary_architecture }}-{{ victoria_version }}.tar.gz"
+    dest: "/tmp/victoriametrics/vm-{{ victoria_version }}.tar.gz"
+    checksum: "sha256:https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/{{ victoria_version }}/victoria-metrics-{{ victoria_binary_architecture }}-{{ victoria_version }}_checksums.txt"
+
+- name: Unzip binaries
+  ansible.builtin.unarchive:
+    src: "/tmp/victoriametrics/vm-{{ victoria_version }}.tar.gz"
+    dest: "{{ victoria_binary_dir }}"
+    remote_src: yes
+    creates: "{{ victoria_binary_dir }}/victoria-metrics-prod"
+  notify: victoriametrics neu starten

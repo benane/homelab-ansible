@@ -1,0 +1,26 @@
+global:
+  scrape_interval: {{ victoria_scrape_interval }}
+
+scrape_configs:
+  - job_name: node
+    static_configs:
+      - targets:
+{% for h in groups['monitoring_targets'] %}
+        - "{{ hostvars[h].ansible_host }}:9100"
+{% endfor %}
+  - job_name: pve
+    metrics_path: /pve
+    params:
+      module: [default]
+    static_configs:
+      - targets:
+{% for h in groups['proxmox_nodes'] %}
+          - "{{ hostvars[h].ansible_host }}"
+{% endfor %}
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: "{{ hostvars[groups['proxmox_nodes'][0]].ansible_host }}:9221"

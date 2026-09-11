@@ -12,16 +12,16 @@ ansible-playbook playbooks/site.yml --limit all
 
 ### Einzelnen Container erstellen/konfigurieren
 
-`container_site.yml` erzeugt/konfiguriert genau einen LXC-Container und braucht daher den Ziel-Host als Extra-Var:
+`container_site.yml` läuft gegen die Gruppe `lxc_provisioned` und braucht daher `--limit` auf genau den Container, den du erzeugen/konfigurieren willst (der Host muss Mitglied von `lxc_provisioned` sein):
 
 ```bash
-ansible-playbook playbooks/container_site.yml -e target_host=lxc-zigbee2mqtt
+ansible-playbook playbooks/container_site.yml --limit lxc-zigbee2mqtt
 ```
 
 **Erster Lauf für einen neuen Container:** Der `ansible`-Service-User existiert noch nicht (den legt erst die `common`-Rolle an), daher muss die Verbindung beim allerersten Mal als `root` erfolgen:
 
 ```bash
-ansible-playbook playbooks/container_site.yml -e target_host=lxc-zigbee2mqtt -u root
+ansible-playbook playbooks/container_site.yml --limit lxc-zigbee2mqtt -u root
 ```
 
 Ab dem zweiten Lauf greift wieder der Default aus `ansible.cfg` (`remote_user = ansible`) – `-u root` nicht mehr nötig. `ansible_user: root` sollte deshalb **nicht** dauerhaft in `hosts.yml` stehen bleiben.
@@ -43,7 +43,7 @@ Home-Assistant-Geräte sollten danach innerhalb weniger Sekunden wieder "availab
 
 - backup restore
 - Proxmox-API-Token und Berechtigungen automatisch anlegen, statt als Handschritt
-- Wrapper-Script für Container-Erstellung (kapselt `-e target_host=` und beim ersten Lauf `-u root`, gegen Tippfehler)
+- Wrapper-Script für Container-Erstellung (kapselt `--limit <host>` und beim ersten Lauf `-u root`, gegen Tippfehler)
 - `container_vmid` dynamisch (nächste freie ID ab 201): **zurückgestellt**, bis die ganze Kette (Monitoring, Tunnel, DNS, Reverse Proxy) einen Rebuild automatisch nachzieht – sonst mehr Nacharbeit als Nutzen, und Rebuilds werden nicht-deterministisch.
 - Container-Provisioning: Rolle `proxmox_container` steht (create/template/metadata; Node/Storage inventory-gesteuert via `container_node` / `container_storage`, Fallback `proxmox_default_*` in `group_vars/all/proxmox.yml`). **Offen:** schlankes `guest_site.yml`, das LXC- vs. VM-Rolle wählt und danach `common` + `hardening` + Service-Rolle anhängt; analoge Rolle `proxmox_vm`. Service-Rollen bleiben eigenständig. Details: `docs/playbook-architecture.md`
 - LXC 208 (`lxc-nginx-proxy`), 213 (`lxc-authentik`) und die HA-VM (`vm-hassio`) laufen physisch auf `Corellia`, im Inventory nur IP-Stubs. Beim Reproduzieren per Ansible: `container_vmid` / `container_role` / `container_node: Corellia` / `container_storage: nvme-zfs` nachziehen.

@@ -1,0 +1,10 @@
+---
+victoria_version: "v1.151.0"
+victoria_binary_architecture: "linux-amd64"
+victoria_user: "victoriametrics"
+victoria_config_dir: /etc/victoriametrics
+victoria_data_dir: /var/lib/victoria-metrics
+victoria_binary_dir: /usr/local/bin
+victoria_retention_period: 12
+victoria_http_port: 8428
+victoria_scrape_interval: 30s

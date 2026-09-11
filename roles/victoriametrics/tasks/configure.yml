@@ -1,0 +1,9 @@
+---
+- name: VM-Konfiguration schreiben
+  ansible.builtin.template:
+    src: scrape.yml.j2
+    dest: "{{ victoria_config_dir }}/scrape.yml"
+    mode: "0644"
+  notify: victoriametrics neu starten
+  tags: [victoria-config]
+  
