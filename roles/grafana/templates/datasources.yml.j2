@@ -1,0 +1,9 @@
+apiVersion: 1
+
+datasources:
+  - name: VictoriaMetrics
+    url: "{{ grafana_victoriametrics_url }}"
+    type: prometheus
+    access: proxy
+    uid: victoriametrics
+    isDefault: true

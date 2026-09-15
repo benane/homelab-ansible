@@ -1,0 +1,5 @@
+---
+grafana_config_dir: /etc/grafana
+grafana_dashboards_dir: /var/lib/grafana/dashboards
+grafana_victoriametrics_url: "http://{{ hostvars['lxc-victoriametrics'].ansible_host }}:8428"
+grafana_port: 3000

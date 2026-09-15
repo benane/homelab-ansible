@@ -1,0 +1,21 @@
+---
+- name: Grafana-Repo eintragen
+  ansible.builtin.deb822_repository:
+    name: grafana
+    types: deb
+    uris: "https://apt.grafana.com"
+    suites: stable
+    components: main
+    signed_by: "https://apt.grafana.com/gpg.key"
+  register: grafana_repo
+
+- name: APT-Cache aktualisieren
+  ansible.builtin.apt:
+    update_cache: true
+  when: grafana_repo.changed
+
+- name: grafana installieren
+  ansible.builtin.apt:
+    name:
+      - grafana
+    state: present

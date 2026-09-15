@@ -64,3 +64,4 @@ Home-Assistant-Geräte sollten danach innerhalb weniger Sekunden wieder "availab
 
 - Terraform evaluieren: nach Fertigstellung `site.yml`, isoliert, Cloudflare (DNS/Tunnel) als erster Fall, dann UniFi, später ggf. Gast-Erstellung. Einstieg: `docs/terraform-evaluation.md`
 - Versionen pinnen und Updates verfolgen: zentrale `versions.yml` (Anfang steht), Benachrichtigung über newreleases.io/RSS, später Renovate (Dependency Dashboard + Changelog-PRs), optional HTML-Dashboard mit Repo-vs-installiert-Abgleich. Strategie: `docs/version-tracking.md`
+  - Betrifft auch alle apt-Repo-Rollen (`cloudflared`, `grafana`, …): installieren aktuell unversioniert (`state: present` ohne `=version`), ziehen also bei jedem Lauf potenziell die neueste Repo-Version. Bewusst zurückgestellt, bis diese zentrale Versionsverwaltung steht – dann in einem Rutsch für alle apt-Rollen nachziehen, nicht Rolle für Rolle einzeln pinnen.

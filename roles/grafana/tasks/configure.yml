@@ -1,0 +1,24 @@
+---
+- name: Grafana Konfig schreiben
+  ansible.builtin.template:
+    src: grafana.ini.j2
+    dest: "{{ grafana_config_dir }}/grafana.ini"
+    mode: "0644"
+  notify: grafana neu starten
+  tags: [grafana-config]
+
+- name: Grafana Datasources schreiben
+  ansible.builtin.template:
+    src: datasources.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/datasources/datasources.yml"
+    mode: "0644"
+  notify: grafana neu starten
+  tags: [grafana-config]
+
+- name: Grafana Provisioning schreiben
+  ansible.builtin.template:
+    src: dashboards.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/dashboards/dashboards.yml"
+    mode: "0644"
+  notify: grafana neu starten
+  tags: [grafana-config]
