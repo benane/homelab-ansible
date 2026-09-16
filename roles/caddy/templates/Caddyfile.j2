@@ -1,0 +1,40 @@
+{
+    acme_dns cloudflare {env.CF_API_TOKEN}
+    servers {
+        trusted_proxies static {{ caddy_trusted_proxies }}
+        client_ip_headers Cf-Connecting-IP
+    }
+}
+
+*.ledermann.cc {
+
+    @blocked {
+        not remote_ip private_ranges
+        not host jellyfin.ledermann.cc
+    }
+
+    handle @blocked {
+        abort
+    }
+
+{% for s in caddy_sites %}
+    @{{ s.name }} host {{ s.name }}.{{ external_domain }}
+    handle @{{ s.name }} {
+        reverse_proxy {{ s.upstream }}{% if s.upstream_insecure | default(false) %} {
+            transport http {
+                tls_insecure_skip_verify
+            }
+        }{% endif %}
+
+    }
+{% endfor %}
+
+    handle {
+        abort
+    }
+
+    log {
+        output file {{ caddy_log_dir }}/access.log
+    }
+
+}

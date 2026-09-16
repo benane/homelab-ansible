@@ -1,0 +1,7 @@
+---
+caddy_config_dir: /etc/caddy
+caddy_data_dir: /var/lib/caddy
+caddy_log_dir: /var/log/caddy
+caddy_user: caddy
+caddy_version: "2.11.4"
+caddy_binary_architecture: "linux-amd64"

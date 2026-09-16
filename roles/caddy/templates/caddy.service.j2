@@ -1,0 +1,20 @@
+[Unit]
+Description=Caddy
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+User={{ caddy_user }}
+Group={{ caddy_user }}
+EnvironmentFile={{ caddy_config_dir }}/.env
+ExecStart=/usr/local/bin/caddy run --config {{ caddy_config_dir }}/Caddyfile
+ExecReload=/usr/local/bin/caddy reload --config {{ caddy_config_dir }}/Caddyfile --force
+TimeoutStopSec=5s
+LimitNOFILE=1048576
+PrivateTmp=true
+ProtectSystem=full
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target

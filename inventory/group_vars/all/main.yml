@@ -1,3 +1,8 @@
 ---
 timezone: Europe/Berlin
 external_domain: "ledermann.cc"
+caddy_trusted_proxies: >-
+  {{ groups['cloudflared_hosts']
+    | map('extract', hostvars, 'ansible_host')
+    | map('regex_replace', '$', '/32')
+    | join(' ') }}
