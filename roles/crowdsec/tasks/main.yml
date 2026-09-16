@@ -1,0 +1,66 @@
+---
+- name: CrowdSec-Repo eintragen
+  ansible.builtin.deb822_repository:
+    name: crowdsec
+    types: deb
+    uris: "https://packagecloud.io/crowdsec/crowdsec/any"
+    suites: any
+    components: main
+    signed_by: "https://packagecloud.io/crowdsec/crowdsec/gpgkey"
+  register: crowdsec_repo
+
+- name: APT-Cache aktualisieren
+  ansible.builtin.apt:
+    update_cache: true
+  when: crowdsec_repo.changed
+
+- name: CrowdSec installieren
+  ansible.builtin.apt:
+    name:
+      - crowdsec
+    state: present
+
+- name: Installierte Collections ermitteln
+  ansible.builtin.command: cscli collections list -o json
+  register: crowdsec_collections_installed
+  changed_when: false
+
+- name: Collections installieren
+  ansible.builtin.command: "cscli collections install {{ item }}"
+  loop: "{{ crowdsec_collections }}"
+  when: item not in ((crowdsec_collections_installed.stdout | from_json).collections | map(attribute='name') | list)
+  notify: crowdsec neu starten
+
+- name: Vorhandene Bouncers ermitteln
+  ansible.builtin.command: cscli bouncers list -o json
+  register: crowdsec_bouncers_added
+  changed_when: false
+
+- name: Bouncers installieren
+  ansible.builtin.command: "cscli bouncers add caddy --key {{ vault_crowdsec_caddy_bouncer_key }}"
+  when: item not in (crowdsec_bouncers_added.stdout | from_json | map(attribute='name') | list)
+  notify: crowdsec neu starten
+
+- name: Update Job
+  ansible.builtin.command: "cscli hub update"
+  notify: crowdsec neu starten
+
+- name: Upgrade Job
+  ansible.builtin.command: "cscli hub upgrade"
+  notify: crowdsec neu starten
+
+- name: Konfigurationsverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ crowdsec_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Konfiguration schreiben
+  ansible.builtin.template:
+    src: caddy.yml.j2
+    dest: "{{ crowdsec_config_dir }}/acquis.d/caddy.yaml"
+    mode: "0644"
+  notify: crowdsec neu starten
+  tags: [crowdsec-config]

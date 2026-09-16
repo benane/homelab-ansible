@@ -1,0 +1,8 @@
+---
+crowdsec_config_dir: /etc/crowdsec
+crowdsec_collections:
+  - crowdsecurity/caddy
+  - crowdsecurity/base-http-scenarios
+  - crowdsecurity/http-cve
+  - crowdsecurity/linux
+  - crowdsecurity/sshd

@@ -1,0 +1,6 @@
+---
+- name: CrowdSec konfigurieren
+  hosts: crowdsec_hosts
+  become: true
+  roles:
+    - crowdsec

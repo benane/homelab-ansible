@@ -4,9 +4,17 @@
         trusted_proxies static {{ caddy_trusted_proxies }}
         client_ip_headers Cf-Connecting-IP
     }
+
+    order crowdsec first
+    crowdsec {
+        api_url http://127.0.0.1:8080
+        api_key {env.CROWDSEC_API_KEY}
+    }
 }
 
 *.ledermann.cc {
+
+    crowdsec
 
     @blocked {
         not remote_ip private_ranges
