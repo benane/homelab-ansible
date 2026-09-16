@@ -1,3 +1,4 @@
+---
 proxmox_api_host: 172.16.10.10
 proxmox_api_user: ansible@pve
 proxmox_api_token_id: ansible-automation

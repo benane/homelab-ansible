@@ -9,7 +9,10 @@ container_profile: small
 container_template_name: "debian-13-standard_13.6-1_amd64.tar.zst"
 container_template_storage: "local"
 container_template: "{{ container_template_storage }}:vztmpl/{{ container_template_name }}"
-container_storage: local-lvm
 container_pool: "{{ proxmox_default_pool }}"
 container_node: "{{ proxmox_default_node }}"
 container_mac: "{{ proxmox_default_mac_prefix + ('%02X' | format(container_vmid | int)) }}"
+container_ha: false
+container_ha_capable_storages:
+  - nvme-zfs
+container_storage: "{{ container_ha_capable_storages[0] if (container_ha | default(false) | bool) else 'local-lvm' }}"

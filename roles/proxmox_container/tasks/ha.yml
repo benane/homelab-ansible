@@ -1,0 +1,17 @@
+---
+- name: Sicherstellen, dass HA-Container auf repliziertem Storage liegen
+  ansible.builtin.assert:
+    that: container_storage in container_ha_capable_storages
+    fail_msg: >-
+      container_ha=true, aber container_storage={{ container_storage }} ist nicht in
+      container_ha_capable_storages – HA-Neustart würde ins Leere laufen.
+  when: container_ha | bool
+
+- name: Container als HA-Ressource registrieren
+  community.proxmox.proxmox_cluster_ha_resources:
+    name: "ct:{{ container_vmid }}"
+    state: present
+    max_relocate: 1
+    max_restart: 1
+  delegate_to: localhost
+  when: container_ha | bool
