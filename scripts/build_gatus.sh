@@ -14,6 +14,7 @@ git clone --depth 1 --branch "v${VERSION}" https://github.com/TwiN/gatus.git "$B
 # Toolchain aus dem geklonten go.mod ziehen -> löst dein 1.27-Problem automatisch
 TC="go$(awk '/^go [0-9]/{print $2}' "$BUILD/go.mod")"
 
+# GOOS und GOARCH müssen zu gatus_binary_architecture in defaults/main.yml passen
 ( cd "$BUILD" && GOTOOLCHAIN="$TC" CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -o "$DEST" . )
 
