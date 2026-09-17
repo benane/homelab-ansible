@@ -38,7 +38,7 @@
 
 - name: Bouncers installieren
   ansible.builtin.command: "cscli bouncers add caddy --key {{ vault_crowdsec_caddy_bouncer_key }}"
-  when: item not in (crowdsec_bouncers_added.stdout | from_json | map(attribute='name') | list)
+  when: 'caddy' not in (crowdsec_bouncers_added.stdout | from_json | map(attribute='name') | list)
   notify: crowdsec neu starten
 
 - name: Update Job
