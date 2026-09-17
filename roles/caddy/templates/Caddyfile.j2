@@ -10,6 +10,8 @@
         api_url http://127.0.0.1:8080
         api_key {env.CROWDSEC_API_KEY}
     }
+
+    metrics
 }
 
 *.ledermann.cc {
@@ -25,7 +27,13 @@
         abort
     }
 
-{% for s in caddy_sites %}
+    @caddymetrics host caddy.{{ external_domain }}
+
+    handle @caddymetrics {
+        metrics /metrics
+    }
+
+{% for s in service_registry if s.name != 'caddy' %}
     @{{ s.name }} host {{ s.name }}.{{ external_domain }}
     handle @{{ s.name }} {
         reverse_proxy {{ s.upstream }}{% if s.upstream_insecure | default(false) %} {
