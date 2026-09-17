@@ -1,0 +1,36 @@
+---
+- name: Pi-hole DNS
+  hosts: dns_resolvers
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role:
+        name: pihole
+        tasks_from: configure.yml
+
+- name: Caddy
+  hosts: caddy_hosts
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role:
+        name: caddy
+        tasks_from: configure.yml
+
+- name: Tunnel
+  hosts: cloudflared_hosts
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role:
+        name: cloudflared
+        tasks_from: configure.yml
+
+- name: Gatus
+  hosts: gatus_hosts
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role:
+        name: gatus
+        tasks_from: configure.yml
