@@ -1,0 +1,9 @@
+---
+- name: Gatus-Binary installieren
+  ansible.builtin.copy:
+    src: "gatus-{{ gatus_version }}-{{ gatus_binary_architecture }}"
+    dest: /usr/local/bin/gatus
+    mode: "0755"
+    owner: root
+    group: root
+  notify: gatus neu starten

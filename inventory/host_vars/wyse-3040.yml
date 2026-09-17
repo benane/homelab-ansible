@@ -5,10 +5,7 @@ host_services:
     exposure: tunnel
     health_url: "http://{{ ansible_host }}:{{ gatus_web_port }}/health"
 
-pihole_deployment: baremetal
-
 gatus_storage_type: memory
-gatus_deployment: baremetal
 gatus_discord_webhook: "{{ vault_discord_critical_webhook }}"
 gatus_failure_threshold: 2
 gatus_failure_critical_threshold: 1

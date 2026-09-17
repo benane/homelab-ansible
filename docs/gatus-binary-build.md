@@ -9,10 +9,10 @@ Zeile macht (inkl. `awk`, das vorher niemand kannte).
 ## 1. Warum überhaupt selbst bauen
 
 `TwiN/gatus` veröffentlicht auf GitHub **keine fertigen Binaries** – nur
-Quellcode-Tarballs und ein Container-Image (`ghcr.io/twin/gatus`). Für den
-Wyse ist das Image völlig ok (Podman-Quadlet). Für den LXC 204 soll Gatus aber
-**bare-metal** laufen (siehe Rollen-Dispatch `gatus_deployment: container |
-baremetal`) – dafür braucht es ein echtes Linux-Binary.
+Quellcode-Tarballs und ein Container-Image (`ghcr.io/twin/gatus`). Gatus läuft
+bei uns überall **bare-metal** (der frühere Podman-Quadlet-Weg für den Wyse
+wurde nach kurzem Ausprobieren wieder entfernt, siehe README) – dafür braucht
+es ein echtes Linux-Binary.
 
 Gatus ist in Go geschrieben. Go kompiliert zu **einer einzigen ausführbaren
 Datei** pro Ziel-Betriebssystem/Architektur. Mit `GOOS=linux GOARCH=amd64`

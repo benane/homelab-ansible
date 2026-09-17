@@ -127,7 +127,7 @@ die echte IP (Phase 4) und kann dort sperren.
 
 Das apt-Paket würde bei jedem `apt upgrade` dein Binary überschreiben. Also:
 apt-Repo raus, eigenes Binary + eigene systemd-Unit rein – genau wie bei
-Gatus (`gatus_deployment: baremetal`).
+Gatus.
 
 Das apt-Paket hat bisher drei Dinge „geschenkt", die du jetzt selbst anlegst:
 

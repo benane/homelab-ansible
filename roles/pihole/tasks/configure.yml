@@ -1,0 +1,10 @@
+---
+- name: ENV Konfig schreiben
+  ansible.builtin.template:
+    src: pihole-FTL.env.j2
+    dest: /etc/pihole/pihole-FTL.env
+    mode: "0600"
+    owner: root
+  no_log: true
+  notify: pihole-FTL neu starten
+  tags: [pihole-config]

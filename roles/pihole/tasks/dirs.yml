@@ -1,0 +1,5 @@
+---
+- name: Overrideverzeichnis anlegen
+  ansible.builtin.file:
+    path: /etc/systemd/system/pihole-FTL.service.d
+    state: directory

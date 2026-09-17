@@ -8,7 +8,6 @@ host_services:
     health_url: "http://{{ ansible_host }}:{{ gatus_web_port }}/health"
 
 gatus_storage_type: sqlite
-gatus_deployment: baremetal
 gatus_discord_webhook: "{{ vault_discord_webhook }}"
 gatus_failure_threshold: 2
 
