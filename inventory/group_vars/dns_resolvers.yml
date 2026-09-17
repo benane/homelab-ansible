@@ -21,8 +21,6 @@ pihole_cname_records:
   - "maintainerr.lan,npm.lan"
   - "auth.ledermann.cc,npm.lan"
   - "bazarr.lan,npm.lan"
-  - "alderaan.ledermann.cc,npm.lan"
-  - "corellia.ledermann.cc,npm.lan"
 pihole_dns_hosts:
   - "172.16.10.20 unraid.lan"
   - "172.16.10.1 unifi.lan"
@@ -32,5 +30,6 @@ pihole_dns_hosts:
   - "172.16.10.60 mustafar.lan"
   - "172.16.50.30 kamino.lan"
   - "172.16.10.60 pihole3.lan"
+  - "172.16.10.204 caddy.ledermann.cc"
 pihole_dns_upstreams:
   - "127.0.0.1#5335"
