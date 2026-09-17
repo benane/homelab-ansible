@@ -1,0 +1,32 @@
+---
+- name: Credentials-JSON schreiben
+  ansible.builtin.copy:
+    content: "{{ vault_cloudflared_credentials_json }}"
+    dest: "{{ cloudflared_credentials_file }}"
+    mode: "0600"
+  notify: cloudflared neu starten
+  no_log: true
+  tags: [cloudflared-config]
+
+- name: Konfiguration schreiben
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ cloudflared_config_dir }}/config.yml"
+    mode: "0644"
+  notify: cloudflared neu starten
+  tags: [cloudflared-config]
+
+- name: Ingress Einträge in den DNS schreiben
+  community.general.cloudflare_dns:
+    type: CNAME
+    value: "{{ cloudflared_tunnel_id }}.cfargotunnel.com"
+    zone: "{{ external_domain }}"
+    record: "{{ item.hostname }}"
+    api_token: "{{ vault_cloudflare_api_token }}"
+    proxied: true
+    state: present
+  loop: "{{ cloudflared_ingress | selectattr('hostname', 'defined') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  tags: [cloudflared-config]

@@ -1,0 +1,10 @@
+---
+- name: Caddy-Binary installieren
+  ansible.builtin.copy:
+    src: "caddy-{{ caddy_version }}-{{ caddy_binary_architecture }}"
+    dest: /usr/local/bin/caddy
+    mode: "0755"
+    owner: root
+    group: root
+  notify: caddy neu starten
+  

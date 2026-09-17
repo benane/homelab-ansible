@@ -1,0 +1,21 @@
+---
+- name: Cloudflare-Repo eintragen
+  ansible.builtin.deb822_repository:
+    name: cloudflared
+    types: deb
+    uris: "https://pkg.cloudflare.com/cloudflared"
+    suites: any
+    components: main
+    signed_by: "https://pkg.cloudflare.com/cloudflare-main.gpg"
+  register: cloudflared_repo
+
+- name: APT-Cache aktualisieren
+  ansible.builtin.apt:
+    update_cache: true
+  when: cloudflared_repo.changed
+
+- name: cloudflared installieren
+  ansible.builtin.apt:
+    name:
+      - cloudflared
+    state: present

@@ -1,0 +1,17 @@
+---
+- name: Caddy Konfig schreiben
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ caddy_config_dir }}/Caddyfile"
+    mode: "0644"
+  notify: caddy neu laden
+  tags: [caddy-config]
+
+- name: .env schreiben
+  ansible.builtin.template:
+    src: secrets.env.j2
+    dest: "{{ caddy_config_dir }}/.env"
+    mode: "0600"
+  notify: caddy neu starten
+  tags: [caddy-config]
+  

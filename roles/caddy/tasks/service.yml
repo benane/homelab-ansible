@@ -1,0 +1,14 @@
+---
+- name: Service schreiben
+  ansible.builtin.template:
+    src: caddy.service.j2
+    dest: /etc/systemd/system/caddy.service
+    mode: "0644"
+  notify: caddy neu starten
+
+- name: Caddy aktivieren und starten
+  ansible.builtin.systemd:
+    name: caddy.service
+    state: started
+    enabled: true
+    daemon_reload: true

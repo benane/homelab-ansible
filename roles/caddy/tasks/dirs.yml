@@ -1,0 +1,17 @@
+---
+- name: Konfigverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ caddy_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Logverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ caddy_log_dir }}"
+    state: directory
+    owner: "{{ caddy_user }}"
+    group: "{{ caddy_user }}"
+    mode: "0755"
+    

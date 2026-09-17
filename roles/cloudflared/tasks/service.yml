@@ -1,0 +1,5 @@
+---
+- name: cloudflared als Service registrieren
+  ansible.builtin.command:
+    cmd: "cloudflared service install"
+    creates: /etc/systemd/system/cloudflared.service

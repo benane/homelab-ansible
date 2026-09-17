@@ -1,0 +1,14 @@
+---
+- name: Gruppe 'caddy' anlegen
+  ansible.builtin.group:
+    name: "{{ caddy_user }}"
+    state: present
+
+- name: Service-User 'caddy' anlegen
+  ansible.builtin.user:
+    name: "{{ caddy_user }}"
+    group: "{{ caddy_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ caddy_data_dir }}"
+    
