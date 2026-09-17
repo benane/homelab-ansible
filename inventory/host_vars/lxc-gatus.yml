@@ -1,4 +1,12 @@
 ---
+host_services:
+  - name: gatus
+    upstream: "{{ ansible_host }}:{{ gatus_web_port }}"
+    exposure: intern
+    gatus_group: proxmox
+    gatus_host: wyse-3040
+    health_url: "http://{{ ansible_host }}:{{ gatus_web_port }}/health"
+
 gatus_storage_type: sqlite
 gatus_deployment: baremetal
 gatus_discord_webhook: "{{ vault_discord_webhook }}"
@@ -49,16 +57,6 @@ gatus_endpoints:
     - type: discord
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
-
-  - name: mustafar-gatus
-    url: "http://{{ hostvars['wyse-3040'].ansible_host }}:8080/health"
-    group: infrastructure
-    interval: 1m
-    conditions: ["[STATUS] == 200"]
-    alerts:
-      - type: discord
-        failure-threshold: "{{ gatus_failure_threshold }}"
-        send-on-resolved: true
 
   - name: home-assistant
     url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"

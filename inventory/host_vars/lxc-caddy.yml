@@ -1,9 +1,6 @@
 ---
-caddy_sites:
-  - name: paperless
-    upstream: "172.16.10.207:8000"
-    exposure: tunnel
-  - name: proxmox-alderaan
-    upstream: "https://172.16.10.10:8006"
-    upstream_insecure: true      # selbstsigniertes Zertifikat am Ziel
+host_services:
+  - name: caddy
     exposure: intern
+    gatus_group: proxmox
+    health_url: "https://caddy.{{ external_domain }}/metrics"

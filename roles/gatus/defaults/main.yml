@@ -4,7 +4,6 @@ gatus_version: "5.36.0"
 gatus_binary_architecture: "linux-amd64"
 gatus_config_dir: /etc/gatus
 gatus_data_dir: /var/lib/gatus
-gatus_web_port: 8080
 gatus_storage_type: memory
 gatus_deployment: baremetal
 gatus_user: gatus
@@ -15,3 +14,5 @@ gatus_alerting: {}
 gatus_endpoints: []
 gatus_external_endpoints: []
 gatus_maintenance: {}
+
+gatus_registry_endpoints: "{{ service_registry | to_gatus_endpoints(inventory_hostname, gatus_failure_threshold) }}"

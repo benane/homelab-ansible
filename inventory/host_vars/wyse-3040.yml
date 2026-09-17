@@ -1,4 +1,10 @@
 ---
+host_services:
+  - name: status
+    upstream: "{{ ansible_host }}:{{ gatus_web_port }}"
+    exposure: tunnel
+    health_url: "http://{{ ansible_host }}:{{ gatus_web_port }}/health"
+
 pihole_deployment: baremetal
 
 gatus_storage_type: memory
