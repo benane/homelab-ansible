@@ -2,3 +2,4 @@
 gatus_web_port: 8080
 grafana_web_port: 3000
 victoria_web_port: 8428
+cloudflared_metrics_port: 2000

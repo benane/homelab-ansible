@@ -722,16 +722,47 @@ Sonderfälle bleiben in der Handliste.
 {{ gatus_endpoints | to_nice_yaml }}
 ```
 
-- Die Checks laufen **über Caddy** (per Pi-hole-Name) – damit prüft Gatus
-  Dienst, Proxy und Zertifikat in einem.
+- **Umgesetzt anders als hier ursprünglich geplant:** Checks laufen **direkt
+  auf `upstream`** (nackte IP:Port), **nicht** über Caddy/Pi-hole-Namen –
+  bewusste Entscheidung, um Fehlerquellen zu trennen (ein Caddy-Ausfall soll
+  nicht 20 Dienst-Checks gleichzeitig rot färben). Umgesetzt über ein
+  Filter-Plugin (`roles/gatus/filter_plugins/registry.py`,
+  `to_gatus_endpoints`), weil Jinja2 **keine** Python-artigen
+  List-Comprehensions in Ausdrücken unterstützt (`[x for y in z]` – getestet,
+  ist ein `TemplateSyntaxError`). Zusätzliche Steckbrief-Felder:
+  `gatus_group` (Dashboard-Gruppe, Default `services`), `gatus_host` (welche
+  der zwei Gatus-Instanzen prüft – Default `lxc-gatus`, Override nur bei
+  Einträgen, die explizit von der *anderen* Instanz geprüft werden sollen,
+  z.B. der `gatus`-Steckbrief selbst). `health_url` (komplette URL, bewusst
+  **kein** `health_path`-Fallback mehr) statt `upstream`+Pfad-Formel – einfacher, seit alle bisherigen Fälle sowieso eine volle URL brauchten.
 - `gatus_endpoints` in `host_vars/lxc-gatus.yml` enthält danach nur noch
-  Dinge ohne Steckbrief (Proxmox-API, Geräte …).
-- Optional: `health_path: false` im Steckbrief → kein Check (für Dienste, die
-  keinen sinnvollen Endpunkt haben).
+  Dinge ohne Steckbrief (Proxmox-API, Geräte …) – bewusst **nicht** wieder
+  einer richtigeren Generik geopfert, siehe Notiz unten.
 
 ### Fertig, wenn
 
 - In Gatus erscheinen alle Registry-Dienste; die Handliste ist deutlich kürzer.
+
+### Bekannte Grenze: nur `[STATUS] == 200`, keine reicheren Bedingungen
+
+Die generische Formel unterstützt ausschließlich `[STATUS] == 200` – kein
+`[BODY]...`-Check, kein `client.insecure`, kein alternativer Check-Typ
+(`tcp://`, `dns:`). Bewusst so entschieden: Diese Komplexität bleibt in der
+handgepflegten Infrastruktur-Liste (Proxmox-Nodes, Unraid/UniFi-Dashboards),
+die eigene Rolle bräuchten. Zwei konkrete Fälle, bei denen das schon spürbar
+zu wenig war:
+
+- **Grafana:** alter Handeintrag hatte zusätzlich `[BODY].database == ok`
+  (verloren beim Migrieren in die Registry – akzeptiert).
+- **cloudflared:** alter Handeintrag hatte zusätzlich
+  `[BODY].readyConnections > 0` – hier wiegt der Verlust schwerer, weil ein
+  `/ready`, das `200` aber `readyConnections: 0` liefert, einen **toten
+  Tunnel als "gesund" meldet** (echter blinder Fleck, kein Nice-to-have).
+
+**Merkposten:** Beim dritten vergleichbaren Fall lohnt sich vermutlich der
+Umbau auf ein optionales `gatus_conditions`-Feld (Liste, überschreibt den
+Default) statt der festen `["[STATUS] == 200"]`. Bisher zwei von drei
+akzeptiert – noch zurückgestellt.
 
 ---
 

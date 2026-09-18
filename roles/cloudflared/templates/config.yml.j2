@@ -5,4 +5,4 @@ originRequest:
   matchSNItoHost: true
 ingress:
 {{ cloudflared_ingress | to_nice_yaml(indent=2) | indent(2, first=true) }}
-metrics: "{{ ansible_host }}:2000"
+metrics: "{{ ansible_host }}:{{ cloudflared_metrics_port }}"

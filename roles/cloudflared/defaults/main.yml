@@ -3,4 +3,3 @@ cloudflared_tunnel_id: b43d6744-9d65-4f85-bf37-bd237643a0d0
 cloudflared_credentials_file: "{{ cloudflared_config_dir }}/{{ cloudflared_tunnel_id }}.json"
 cloudflared_ingress: []
 cloudflared_default_origin: "https://{{ hostvars['lxc-nginx-proxy'].ansible_host }}"
-cloudflared_metrics_address: 0.0.0.0:2000
