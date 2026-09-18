@@ -1,0 +1,7 @@
+---
+host_services:
+  - name: victoriametrics
+    upstream: "{{ ansible_host }}:{{ victoria_web_port }}"
+    exposure: intern
+    gatus_group: proxmox
+    health_url: "http://{{ ansible_host }}:{{ victoria_web_port }}/health"

@@ -1,0 +1,7 @@
+---
+host_services:
+  - name: grafana
+    upstream: "{{ ansible_host }}:{{ grafana_web_port }}"
+    exposure: intern
+    gatus_group: proxmox
+    health_url: "http://{{ ansible_host }}:{{ grafana_web_port }}/api/health"

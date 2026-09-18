@@ -67,18 +67,6 @@ gatus_endpoints:
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
 
-  - name: grafana
-    url: "http://172.16.10.210:3000/api/health"
-    group: proxmox
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY].database == ok"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
   - name: cloudflared-a
     url: "http://{{ hostvars['lxc-cloudflared-a'].ansible_host }}:2000/ready"
     group: proxmox
@@ -145,16 +133,6 @@ gatus_endpoints:
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
 
-  - name: victoriametrics
-    url: "http://172.16.10.209:8428/health"
-    group: proxmox
-    interval: 1m
-    conditions: ["[STATUS] == 200"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
   - name: wattwarriors
     url: "http://172.16.10.211:8000/api/health"
     group: proxmox
@@ -162,16 +140,6 @@ gatus_endpoints:
     conditions:
       - "[STATUS] == 200"
       - "[BODY].status == ok"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: zigbee2mqtt
-    url: "http://{{ hostvars['lxc-zigbee2mqtt'].ansible_host }}:8080"
-    group: proxmox
-    interval: 1m
-    conditions: ["[STATUS] == 200"]
     alerts:
     - type: discord
       failure-threshold: "{{ gatus_failure_threshold }}"

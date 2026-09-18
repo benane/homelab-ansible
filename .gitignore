@@ -3,3 +3,5 @@
 id_rsa*
 id_ed25519*
 .vault_pass
+__pycache__/
+*.pyc

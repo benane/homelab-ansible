@@ -13,7 +13,7 @@ Group={{ victoria_user }}
 ExecStart={{ victoria_binary_dir }}/victoria-metrics-prod \
   -storageDataPath={{ victoria_data_dir }} \
   -retentionPeriod={{ victoria_retention_period }} \
-  -httpListenAddr=:{{ victoria_http_port }} \
+  -httpListenAddr=:{{ victoria_web_port }} \
   -promscrape.config={{ victoria_config_dir }}/scrape.yml
 
 SyslogIdentifier={{ victoria_user }}
