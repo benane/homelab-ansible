@@ -1,6 +1,8 @@
 ---
+- name: Installierte Pakete erfassen
+  ansible.builtin.package_facts:
 - import_tasks: zram.yml
-  when: emmc_saver_zram_enabled
+  when: emmc_saver_zram_enabled and 'systemd-zram-generator' not in ansible_facts.packages
 - import_tasks: swap.yml
   when: emmc_saver_disable_disk_swap
 - import_tasks: journald.yml

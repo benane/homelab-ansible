@@ -1,6 +1,6 @@
 ---
 - name: 08b - Unbound
-  hosts: failsafe_hosts
+  hosts: dns_resolvers
   become: true
   gather_facts: false
   
