@@ -25,7 +25,7 @@
     api_token: "{{ vault_cloudflare_api_token }}"
     proxied: true
     state: present
-  loop: "{{ cloudflared_ingress | selectattr('hostname', 'defined') }}"
+  loop: "{{ cloudflared_ingress_effective }}"
   delegate_to: localhost
   become: false
   run_once: true

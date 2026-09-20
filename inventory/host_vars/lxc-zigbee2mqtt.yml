@@ -1,6 +1,7 @@
 ---
 host_services:
   - name: z2m
+    gatus_name: zigbee2mqtt
     upstream: "{{ ansible_host }}:8080"
     exposure: intern
     gatus_group: proxmox

@@ -50,17 +50,17 @@ ist nur das Sicherheitsnetz.
 
 | Phase | Inhalt | Status |
 |---|---|---|
-| 1 | Caddy-Binary mit Modulen bauen | ☐ |
-| 2 | Caddy-Rolle umbauen (Binary statt apt) | ☐ |
-| 3 | DNS-Challenge + Wildcard-Zertifikat | ☐ |
-| 4 | Caddyfile-Grundgerüst (Default-Deny, Log, echte Client-IP) | ☐ |
-| 5 | CrowdSec auf dem Caddy-Host | ☐ |
-| 6 | Dienste von NPM auf Caddy umziehen | ☐ |
-| 7 | Service-Registry: Steckbriefe + Caddy als erster Konsument | ☐ |
-| 8 | Pi-hole als Konsument | ☐ |
-| 9 | cloudflared + CF-DNS als Konsument | ☐ |
-| 10 | Gatus als Konsument | ☐ |
-| 11 | Ablauf „neuer Dienst" (Playbook-Kette) | ☐ |
+| 1 | Caddy-Binary mit Modulen bauen | ✅ |
+| 2 | Caddy-Rolle umbauen (Binary statt apt) | ✅ |
+| 3 | DNS-Challenge + Wildcard-Zertifikat | ✅ |
+| 4 | Caddyfile-Grundgerüst (Default-Deny, Log, echte Client-IP) | ✅ |
+| 5 | CrowdSec auf dem Caddy-Host | ✅ |
+| 6 | Dienste von NPM auf Caddy umziehen | ✅ (2026-09-20, sechs Tunnel-Dienste in einem Rutsch, siehe Phase 6) |
+| 7 | Service-Registry: Steckbriefe + Caddy als erster Konsument | ✅ |
+| 8 | Pi-hole als Konsument | ✅ |
+| 9 | cloudflared + CF-DNS als Konsument | ✅ (2026-09-20, siehe Phase 9) |
+| 10 | Gatus als Konsument | ✅ |
+| 11 | Ablauf „neuer Dienst" (Playbook-Kette) | 🟡 Playbook-Kette steht, Wrapper-Script fehlt noch |
 | 12 | Jellyfin öffentlich (Portforward, CrowdSec-Agent auf Unraid) | ☐ |
 | 13 | NPM abbauen | ☐ |
 | – | Ausblick: Authentik & weitere Konsumenten | – |
@@ -515,6 +515,68 @@ löschen.
   wo zutreffend, über Tunnel).
 - `cloudflared_default_origin` zeigt auf Caddy; die Einzel-Overrides sind weg.
 
+### Ist-Stand: erledigt (2026-09-20)
+
+Statt Dienst für Dienst von Hand umzuziehen, wurde am Ende **in einem Rutsch**
+migriert, nachdem Phase 9 (cloudflared liest jetzt `service_registry`, siehe
+dort) stand: Für `paperless`, `wattwarriors`, `auth` (Authentik) je ein
+Steckbrief in ihren – vorher leeren – `host_vars/lxc-*.yml`-Dateien angelegt
+(`exposure: tunnel`), dazu `container_vmid` in `hosts.yml` nachgetragen (207 /
+211 / 213 – vorher nur IP-Stubs ohne echten Ansible-Host). `immich` und `seer`
+(beide auf Unraid) bekamen nach dem Muster aus Phase 7b neue Stub-Hosts
+`svc-immich`/`svc-seer` in einer eigenen `unraid_services:`-Gruppe. Die alte
+`cloudflared_ingress`-Handliste (`inventory/group_vars/cloudflared_hosts.yml`)
+ist komplett gelöscht, ebenso die dazu parallel existierenden Pi-hole-CNAME-
+Einträge für dieselben fünf Namen (`dns_resolvers.yml`, hätten sonst mit den
+neuen A-Records aus der Registry kollidiert – ein Name kann nicht gleichzeitig
+CNAME und A-Record sein). Verifiziert per `curl` über den echten Tunnel: alle
+sechs Namen antworten (200/302/307 – Redirects bei `paperless`/`auth`/`seer`
+sind normal, keine 502).
+
+Stolperfallen dabei, die für künftige Migrationen dieser Art relevant bleiben:
+- Ein leerer `hosts.yml`-Stub (`lxc-paperless:` ohne `container_vmid`) lässt
+  `{{ ansible_host }}` im Steckbrief mit `'container_vmid' is undefined`
+  scheitern – und zwar nicht nur beim betroffenen Host selbst, sondern überall
+  dort, wo `service_registry` das `upstream`/`health_url`-Feld dereferenziert
+  (Caddy, Gatus) – bricht also fremde Rollen auf fremden Hosts.
+- Eine Gruppen-weite Variable in `hosts.yml` (z.B. `ansible_host` für
+  `unraid_services:`) muss unter einem eigenen `vars:`-Schlüssel stehen, nicht
+  gleichrangig neben `hosts:` – sonst nur eine stille Warnung, keine Variable.
+- Vor jedem echten Deploy lohnt sich `ansible-playbook … --check --diff` je
+  Konsument (Caddy/Gatus/cloudflared/Pi-hole einzeln) – bei Pi-hole zeigt
+  `--diff` wegen `no_log: true` auf dem ENV-Task nichts an; dafür stattdessen
+  eine Wegwerf-Playbook mit `roles: [{name: pihole, tags: ['never']}]` +
+  `debug: var=pihole_dns_records` bauen (lädt die Rollen-Defaults, ohne
+  Tasks auszuführen).
+
+---
+
+## Zwischenschritt (nachträglich, nicht ursprünglich geplant): Rollen in Phasen-Task-Dateien aufgeteilt
+
+Bevor Phase 7–10 (Registry-Konsumenten) sauber funktionieren konnten, mussten
+`caddy`, `gatus`, `pihole` und `cloudflared` erst wie `grafana`/
+`victoriametrics` in **Phasen-Task-Dateien** aufgeteilt werden:
+`users.yml`/`dirs.yml`/`binary.yml` (bzw. `install.yml`)/`configure.yml`/
+`service.yml` statt einer einzigen `main.yml`.
+
+**Warum:** `playbooks/service_registry.yml` (Phase 11) soll bei jeder
+Registry-Änderung **nur die Konfiguration neu schreiben** – nicht die
+komplette Installation (Pakete, Binary-Download, User anlegen) erneut prüfen.
+Mit einer einzigen `main.yml` gäbe es dafür nur zwei schlechte Optionen: die
+ganze Rolle laufen lassen (langsam, unnötige Prüfungen bei jedem
+Dienst-Deploy) oder mit `include_role`/`import_tasks` quer in eine fremde
+Rolle hineingreifen (bricht deren Template-/Files-Suchpfad und – bei
+`include_role` – die `--tags`-Filterung). Mit eigener `configure.yml` pro
+Rolle kann `service_registry.yml` gezielt
+`import_role: {name: <rolle>, tasks_from: configure.yml}` aufrufen (siehe
+Phase 11).
+
+Nebeneffekt dieses Umbaus: Die alten Podman/Container-Deployment-Varianten
+von Gatus und Pi-hole (`container.yml`, `baremetal.yml`,
+`*.container.j2`-Templates) wurden dabei entfernt – waren nur
+Experimentierstand und wurden nie produktiv gebraucht. Beide Rollen sind
+seitdem reine Binary/Bare-Metal-Rollen, kein `_deployment`-Schalter mehr.
+
 ---
 
 ## Phase 7 – Service-Registry: Steckbriefe + Caddy als Konsument
@@ -525,24 +587,46 @@ Jeder Dienst beschreibt sich **selbst**. Konsumenten-Rollen sammeln ein.
 
 ### 7a – Steckbrief am Dienst-Host
 
-`host_vars/lxc-paperless.yml`:
+**Ist-Stand** (`host_vars/lxc-grafana.yml`, als reales Beispiel):
 
 ```yaml
 host_services:
-  - name: paperless
-    upstream: "{{ ansible_host }}:8000"
-    exposure: tunnel
-    health_path: /api/
+  - name: grafana
+    upstream: "{{ ansible_host }}:{{ grafana_web_port }}"
+    exposure: intern
+    gatus_group: proxmox
+    health_url: "http://{{ ansible_host }}:{{ grafana_web_port }}/api/health"
 ```
 
+Abweichungen vom ursprünglichen Entwurf (`health_path` gab es nie so):
+
+- **`health_url`** statt `health_path` – die **komplette** URL, kein
+  Pfad-Fallback mehr. Grund: siehe Phase 10, jeder bisherige Fall brauchte
+  ohnehin eine volle URL (eigener Port statt Caddy-Hostname, `http` statt
+  `https`, …), ein Pfad-Suffix allein hätte nie gereicht.
+- **`gatus_group`** (Dashboard-Gruppe in Gatus, Default `services`),
+  **`gatus_host`** (welche der zwei Gatus-Instanzen prüft, Default
+  `lxc-gatus`), **`gatus_name`** (Anzeigename im Dashboard, Default = `name`)
+  und **`gatus_conditions`** (Liste, überschreibt `["[STATUS] == 200"]`) kamen
+  als reine Gatus-Konsumenten-Felder dazu – alle vier optional, siehe Phase 10.
+- **`upstream` ist optional**: Der Caddy-Steckbrief selbst
+  (`host_vars/lxc-caddy.yml`) hat gar kein `upstream`-Feld, weil Caddy sich
+  nicht selbst reverse-proxyt – das Template schließt `s.name != 'caddy'`
+  explizit aus der Schleife aus (siehe 7d).
 - **Liste**, weil ein Host mehrere Dienste haben kann.
 - `{{ ansible_host }}` wird erst beim Zugriff ausgewertet – und zwar mit den
   Variablen **dieses** Hosts. Aus der Caddy-Rolle heraus kommt also trotzdem
-  die Paperless-IP heraus.
-- Stub-Hosts wie `lxc-paperless` brauchen dafür eine `container_vmid`, sonst
-  ist `ansible_host` leer (siehe `lxc_containers: vars:`).
+  die Ziel-IP heraus.
+- Stub-Hosts brauchen dafür eine `container_vmid`, sonst ist `ansible_host`
+  leer (siehe `lxc_containers: vars:`).
 
 ### 7b – Unraid-Dienste als reine Daten-Hosts
+
+**Noch nicht umgesetzt.** Bisher haben nur `lxc_provisioned`-Hosts (echte
+Ansible-verwaltete LXCs) einen Steckbrief – paperless und jellyfin (auf
+Unraid) sind noch nicht in der Registry, laufen weiter über die alte
+Handliste bzw. NPM. Der Plan unten bleibt der vorgesehene Weg, sobald das
+gebraucht wird (frühestens mit Phase 12/Jellyfin).
 
 In `hosts.yml` eine eigene Gruppe:
 
@@ -570,7 +654,8 @@ daran denken (oder `hosts: all:!unraid_services`).
 
 ### 7c – Einsammeln
 
-`inventory/group_vars/all/services.yml`:
+**Ist-Stand** (`inventory/group_vars/all/main.yml`, nicht in einer eigenen
+`services.yml` – landet zusammen mit den übrigen globalen Variablen):
 
 ```yaml
 service_registry: >-
@@ -578,11 +663,14 @@ service_registry: >-
      | map('extract', hostvars)
      | selectattr('host_services', 'defined')
      | map(attribute='host_services')
-     | flatten
-     + service_registry_extra }}
-
-service_registry_extra: []   # Dienste ohne eigenen Host
+     | flatten }}
 ```
+
+Der `service_registry_extra`-Fallback (für Dienste ohne eigenen Ansible-Host)
+wurde **nicht** gebaut – kam bisher nie zum Tragen, weil jeder registrierte
+Dienst entweder einen echten Host oder (geplant, Phase 7b) einen Stub-Host
+bekommt. Falls doch mal ein Dienst ganz ohne Host in die Registry soll, hier
+ansetzen.
 
 Zeile für Zeile:
 
@@ -608,8 +696,14 @@ ansible localhost -m debug -a "var=service_registry"
 ### 7d – Caddy umstellen
 
 In der Caddy-Rolle `caddy_sites` durch `service_registry` ersetzen – das
-Template bleibt gleich, weil Phase 4 schon dieses Format hatte. Die
-`public`-Hostnamen für Default-Deny:
+Template bleibt gleich, weil Phase 4 schon dieses Format hatte.
+
+**Ist-Stand:** Die `public`-Hostnamen für Default-Deny werden **nicht**
+dynamisch aus der Registry abgeleitet, sondern stehen weiterhin als
+Handeintrag im Caddyfile (`not host jellyfin.ledermann.cc`) – weil Jellyfin
+(Unraid) noch keinen Steckbrief hat (siehe 7b). Die dynamische Variante unten
+lohnt sich erst, sobald mindestens ein `exposure: public`-Eintrag in der
+Registry existiert:
 
 ```jinja
 {{ service_registry | selectattr('exposure', 'eq', 'public') | map(attribute='name') | join(' ') }}
@@ -642,7 +736,10 @@ pihole_dns_records: >-
         | list) }}
 ```
 
-- `caddy_ip` einmal zentral ableiten: `hostvars['lxc-caddy'].ansible_host`.
+- Im echten Code (`roles/pihole/defaults/main.yml`) steht
+  `hostvars['lxc-caddy'].ansible_host` direkt in der Formel – keine eigene
+  `caddy_ip`-Variable, weil sie nirgendwo sonst gebraucht wurde. Bei Bedarf
+  (zweiter Verwendungszweck) zentralisieren, siehe Merksatz im Ausblick unten.
 - `pihole_dns_hosts` bleibt als Handliste für Geräte (unraid.lan, unifi.lan …).
 - **Warum Umgebungsvariable gut ist:** Pi-hole sperrt Einstellungen, die per
   Variable gesetzt sind, in der Web-Oberfläche. Das ist automatisch
@@ -660,31 +757,44 @@ pihole_dns_records: >-
 
 ## Phase 9 – cloudflared + CF-DNS als Konsument
 
-### Ingress
+### Ist-Stand: erledigt (2026-09-20)
 
-Im cloudflared-Template statt der Handliste über die Registry laufen:
+Umgesetzt anders als ursprünglich skizziert – über ein eigenes Filter-Plugin
+statt einer reinen Jinja-Schleife, aus demselben Grund wie bei Gatus (siehe
+Phase 10): die Ziel-Form braucht mehr als `map`/`selectattr` sauber
+hergibt. `roles/cloudflared/filter_plugins/registry.py`
+(`to_cloudflared_ingress`) baut aus jedem `service_registry`-Eintrag mit
+`exposure: tunnel` ein `{hostname, service}`-Dict (`service` zeigt auf die
+Caddy-IP, `:443`). Die alte Handliste `cloudflared_ingress` ist **nicht**
+ersetzt, sondern bleibt als Fallback für Sonderfälle – beide Listen werden in
+`roles/cloudflared/defaults/main.yml` zu einer Variable zusammengeführt:
 
-```jinja
-ingress:
-{% for s in service_registry | selectattr('exposure', 'eq', 'tunnel') %}
-  - hostname: "{{ s.name }}.{{ external_domain }}"
-    service: "https://{{ caddy_ip }}:443"
-    originRequest:
-      matchSNItoHost: true
-{% endfor %}
-  - service: http_status:404
+```yaml
+cloudflared_ingress_effective: "{{ cloudflared_ingress + service_registry | to_cloudflared_ingress(external_domain, cloudflared_default_origin) }}"
 ```
 
-`cloudflared_ingress` kann dann weg (oder bleibt als Extras-Liste für
-Sonderfälle).
+Wichtig dabei (Stolperfalle beim Selbst-Nachbauen): Der Filter (`|`) bindet in
+Jinja **enger** als `+` – das obige parst also korrekt als
+`cloudflared_ingress + (service_registry | to_cloudflared_ingress(...))`,
+keine Klammern nötig, auch wenn es beim Hinschreiben verdächtig aussieht
+(mit `jinja2.Environment()` gegengetestet, siehe Lehre zur Jinja-Syntax bei
+Gatus). `cloudflared_default_origin` zeigt inzwischen auf die **Caddy**-IP
+(nicht mehr NPM) – das Template und der DNS-Task lesen beide nur noch
+`cloudflared_ingress_effective`, ohne weiteren Filter.
+
+`matchSNItoHost: true` sitzt weiterhin **global** im `originRequest`-Block auf
+oberster Ebene der `config.yml` (nicht mehr pro Ingress-Eintrag) – das war die
+Lehre aus dem 502-Ausfall, siehe README.
 
 ### DNS-Einträge
 
-Der bestehende `cloudflare_dns`-Task bekommt als `loop` dieselbe gefilterte
-Liste.
+Der bestehende `cloudflare_dns`-Task läuft über dieselbe
+`cloudflared_ingress_effective`-Liste (kein separater Filter mehr nötig, die
+ist schon fertig kombiniert).
 
-**Löschen ist nicht automatisch:** Der Task legt nur an. Fällt ein Dienst weg,
-bleibt der CNAME bei Cloudflare stehen. Einfachste Lösung:
+**Löschen ist weiterhin nicht automatisch:** Der Task legt nur an. Fällt ein
+Dienst weg, bleibt der CNAME bei Cloudflare stehen. Einfachste Lösung – noch
+nicht gebaut, aber offen:
 
 ```yaml
 cloudflared_removed_hostnames:
@@ -698,7 +808,10 @@ löschen, die nicht in der Registry sind – erst wenn es nervt.)
 ### Fertig, wenn
 
 - Ein Test-Dienst mit `exposure: tunnel` taucht nach einem Lauf im Tunnel und
-  bei Cloudflare auf – ohne dass du `cloudflared_hosts.yml` anfasst.
+  bei Cloudflare auf – ohne dass du `cloudflared_hosts.yml` anfasst. ✅
+  Verifiziert am 2026-09-20 mit sechs echten Diensten gleichzeitig
+  (`paperless`, `wattwarriors`, `auth`, `immich`, `seer`, `status`) – alle per
+  `curl` über den echten Tunnel erreichbar, kein 502.
 
 ---
 
@@ -743,26 +856,55 @@ Sonderfälle bleiben in der Handliste.
 
 - In Gatus erscheinen alle Registry-Dienste; die Handliste ist deutlich kürzer.
 
-### Bekannte Grenze: nur `[STATUS] == 200`, keine reicheren Bedingungen
+### Gelöst (2026-09-20): `gatus_conditions` + `gatus_name`
 
-Die generische Formel unterstützt ausschließlich `[STATUS] == 200` – kein
-`[BODY]...`-Check, kein `client.insecure`, kein alternativer Check-Typ
-(`tcp://`, `dns:`). Bewusst so entschieden: Diese Komplexität bleibt in der
-handgepflegten Infrastruktur-Liste (Proxmox-Nodes, Unraid/UniFi-Dashboards),
-die eigene Rolle bräuchten. Zwei konkrete Fälle, bei denen das schon spürbar
-zu wenig war:
+Der Merkposten unten ist eingetreten – bei der Migration von `paperless`
+(Root-URL antwortet mit Redirect, nicht `200`) und `authentik` (`< 300` statt
+`== 200`) war der dritte/vierte Fall erreicht. Statt einer Rolle für die
+handgepflegte Liste: zwei optionale Steckbrief-Felder in
+`roles/gatus/filter_plugins/registry.py` (`to_gatus_endpoints`):
+
+- **`gatus_conditions`** (Liste, überschreibt `["[STATUS] == 200"]`) –
+  `item.get('gatus_conditions', ['[STATUS] == 200'])`.
+- **`gatus_name`** (String, überschreibt den Anzeigenamen im Dashboard, ohne
+  den technischen `name` für DNS/Caddy/cloudflared anzufassen) –
+  `item.get('gatus_name', item['name'])`. Gelöst damit auch den
+  `auth`/„Authentik"-Fall (Registry-Name bleibt kurz für die URL, Dashboard
+  zeigt den vollen Namen) und `z2m`/„zigbee2mqtt" (gleiches Prinzip).
+
+**Stolperfalle beim ersten Versuch:** Der Default-Wert beim `gatus_name`-Feld
+war aus Versehen der literale String `'name'` statt `item['name']` – jeder
+Eintrag *ohne* Override hieß dann wortwörtlich „name" im Dashboard. Erst beim
+`--check --diff`-Test gegen den echten Render aufgefallen, nicht beim
+Code-Lesen – Lehre: bei so einem `.get(key, default)`-Muster immer den
+Render-Diff gegenchecken, nicht nur den Code.
+
+Damit sind bisher vier Fälle über die neuen Felder abgedeckt (`paperless`,
+`authentik`, `z2m`, ursprünglich auch `immich` – dessen `[BODY].res == pong`
+wurde aber bewusst nicht übernommen, reiner Nice-to-have-Verlust wie beim
+Grafana-Fall). `cloudflared`s `[BODY].readyConnections > 0` bleibt weiterhin
+unübernommen (echter blinder Fleck, siehe unten) – ließe sich jetzt aber mit
+`gatus_conditions` nachziehen, falls gewünscht.
+
+Offen geblieben, bewusst zurückgestellt: `auth` als Registry-Name (kurz,
+technisch) vs. eine ggf. noch aussagekräftigere DNS-Bezeichnung – soll
+zusammen mit dem `authentik`-Sondereintrag am Ende des Gesamtplans nochmal
+angeschaut werden, kein akuter Handlungsbedarf.
+
+### Ursprüngliche Grenze (Kontext, warum das Feld gebaut wurde)
+
+Die generische Formel unterstützte ursprünglich ausschließlich
+`[STATUS] == 200` – kein `[BODY]...`-Check, kein `client.insecure`, kein
+alternativer Check-Typ (`tcp://`, `dns:`). Zwei konkrete Fälle, bei denen das
+schon spürbar zu wenig war:
 
 - **Grafana:** alter Handeintrag hatte zusätzlich `[BODY].database == ok`
-  (verloren beim Migrieren in die Registry – akzeptiert).
+  (verloren beim Migrieren in die Registry – akzeptiert, `gatus_conditions`
+  gab's zu dem Zeitpunkt noch nicht).
 - **cloudflared:** alter Handeintrag hatte zusätzlich
   `[BODY].readyConnections > 0` – hier wiegt der Verlust schwerer, weil ein
   `/ready`, das `200` aber `readyConnections: 0` liefert, einen **toten
   Tunnel als "gesund" meldet** (echter blinder Fleck, kein Nice-to-have).
-
-**Merkposten:** Beim dritten vergleichbaren Fall lohnt sich vermutlich der
-Umbau auf ein optionales `gatus_conditions`-Feld (Liste, überschreibt den
-Default) statt der festen `["[STATUS] == 200"]`. Bisher zwei von drei
-akzeptiert – noch zurückgestellt.
 
 ---
 
@@ -770,25 +912,55 @@ akzeptiert – noch zurückgestellt.
 
 ### Die Playbook-Kette
 
-Neues Playbook `playbooks/service_registry.yml` – nur die Konsumenten:
+**Ist-Stand** – `playbooks/service_registry.yml`, ruft dank des Umbaus aus dem
+Zwischenschritt (vor Phase 7) gezielt nur `configure.yml` je Rolle auf, statt
+die ganze Rolle laufen zu lassen:
 
 ```yaml
 - name: Pi-hole DNS
-  hosts: failsafe_hosts
-  roles: [pihole]
+  hosts: dns_resolvers
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role: {name: pihole, tasks_from: configure.yml}
 
 - name: Caddy
-  hosts: caddy_hosts          # Gruppe neu anlegen, analog gatus_hosts
-  roles: [caddy]
+  hosts: caddy_hosts
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role: {name: caddy, tasks_from: configure.yml}
 
 - name: Tunnel
   hosts: cloudflared_hosts
-  roles: [cloudflared]
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role: {name: cloudflared, tasks_from: configure.yml}
 
-- name: Monitoring
+- name: Gatus
   hosts: gatus_hosts
-  roles: [gatus]
+  become: true
+  gather_facts: false
+  tasks:
+    - import_role: {name: gatus, tasks_from: configure.yml}
 ```
+
+Abweichungen vom ursprünglichen Entwurf:
+
+- **`hosts: dns_resolvers`, nicht `failsafe_hosts`** – `failsafe_hosts`
+  enthält nur `wyse-3040` (Secondary); für die Pi-hole-Config müssen aber
+  **beide** DNS-Resolver (auch `rpi-dns`, Primary) die Registry-Einträge
+  bekommen. Derselbe Fehler (falsche Gruppe eingetragen) ist an anderer
+  Stelle (`playbooks/08b_unbound.yml`) nochmal passiert und dort genauso
+  gefixt worden – beim Anlegen neuer Konsumenten-Plays immer gegen
+  `inventory/hosts.yml` prüfen, welche Gruppe wirklich gemeint ist.
+- **`import_role: {tasks_from: configure.yml}` statt `roles: [...]`** – der
+  Grund steht im Zwischenschritt oben: nur die Konfiguration soll laufen,
+  nicht die komplette Rolle.
+- **`gather_facts: false`** – die Konsumenten-Plays brauchen keine frischen
+  Facts vom Zielhost, nur die schon eingesammelte `service_registry` aus den
+  `hostvars`. Spart Zeit bei jedem Dienst-Deploy.
 
 - **Reihenfolge zählt:** Gatus zuletzt, sonst Fehlalarm.
 - **Neustarts organisieren sich selbst:** Handler laufen am Ende **jedes Plays**.
@@ -818,6 +990,13 @@ ansible-playbook playbooks/service_registry.yml
 3. `./new-service.sh lxc-neu -u root`
 4. Fertig: Container läuft, DNS, Proxy, Zertifikat, ggf. Tunnel und Gatus-Check
    sind da.
+
+**Ist-Stand:** Das Wrapper-Script `new-service.sh` gibt es noch nicht (nur
+`scripts/build_caddy.sh`, `scripts/build_gatus.sh`,
+`scripts/setup_control_node.sh` existieren bisher). Aktuell also weiterhin
+zwei manuelle Aufrufe (`container_site.yml --limit …` dann
+`service_registry.yml`) statt einem Script-Aufruf. Kleine, aber offene
+Lücke – lohnt sich, sobald neue Dienste öfter dazukommen.
 
 ---
 

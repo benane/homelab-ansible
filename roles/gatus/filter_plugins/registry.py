@@ -7,11 +7,11 @@ def to_gatus_endpoints(registry, host, failure_threshold):
         if item.get('gatus_host', 'lxc-gatus') != host:
             continue
         result.append({
-            'name': item['name'],
+            'name': item.get('gatus_name', item['name']),
             'group': item.get('gatus_group', 'services'),
             'url': item['health_url'],
             'interval': '1m',
-            'conditions': ['[STATUS] == 200'],
+            'conditions': item.get('gatus_conditions', ['[STATUS] == 200']),
             'alerts': [{
                 'type': 'discord',
                 'failure-threshold': failure_threshold,

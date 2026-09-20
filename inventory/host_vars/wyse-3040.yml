@@ -1,6 +1,7 @@
 ---
 host_services:
   - name: status
+    gatus_name: gatus
     upstream: "{{ ansible_host }}:{{ gatus_web_port }}"
     exposure: tunnel
     health_url: "http://{{ ansible_host }}:{{ gatus_web_port }}/health"

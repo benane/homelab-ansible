@@ -103,68 +103,12 @@ gatus_endpoints:
     - type: discord
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
-    
-  - name: paperless
-    url: "http://172.16.10.207:8000"
-    group: proxmox
-    interval: 1m
-    conditions: ["[STATUS] < 400"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
 
   - name: vaultwarden
     url: "http://172.16.10.205:8000/alive"
     group: proxmox
     interval: 1m
     conditions: ["[STATUS] == 200"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: wattwarriors
-    url: "http://172.16.10.211:8000/api/health"
-    group: proxmox
-    interval: 1m
-    conditions:
-      - "[STATUS] == 200"
-      - "[BODY].status == ok"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: authentik
-    url: "http://172.16.10.213:9000/-/health/ready/"
-    group: proxmox
-    interval: 1m
-    conditions:
-      - "[STATUS] < 300"
-    alerts:
-      - type: discord
-        failure-threshold: "{{ gatus_failure_threshold }}"
-        send-on-resolved: true
-
-  - name: immich
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8088/api/server/ping"
-    group: unraid
-    interval: 1m
-    conditions:
-    - "[STATUS] == 200"
-    - "[BODY].res == pong"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: jellyfin
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8096/health"
-    group: unraid
-    interval: 1m
-    conditions:
-    - "[STATUS] == 200"
     alerts:
     - type: discord
       failure-threshold: "{{ gatus_failure_threshold }}"
@@ -228,16 +172,6 @@ gatus_endpoints:
 
   - name: sabnzbd
     url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8080"
-    group: unraid
-    interval: 1m
-    conditions: ["[STATUS] == 200"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: seer
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:5055/api/v1/status"
     group: unraid
     interval: 1m
     conditions: ["[STATUS] == 200"]

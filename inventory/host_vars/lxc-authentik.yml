@@ -1,0 +1,10 @@
+---
+# Currently Dummy Entry, not yet Ansible managed!
+host_services:
+  - name: auth
+    gatus_name: authentik
+    upstream: "{{ ansible_host }}:9000"
+    exposure: tunnel
+    gatus_group: proxmox
+    gatus_conditions: ["[STATUS] < 300"]
+    health_url: "http://{{ ansible_host }}:9000/-/health/ready/"

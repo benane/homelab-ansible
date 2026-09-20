@@ -1,0 +1,8 @@
+---
+# Currently Dummy Entry, not yet Ansible managed!
+host_services:
+  - name: jellyfin
+    upstream: "{{ ansible_host }}:8096"
+    exposure: public
+    gatus_group: unraid
+    health_url: "http://{{ ansible_host }}:8096/health"

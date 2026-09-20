@@ -1,0 +1,8 @@
+---
+# Currently Dummy Entry, not yet Ansible managed!
+host_services:
+  - name: wattwarriors
+    upstream: "{{ ansible_host }}:8000"
+    exposure: tunnel
+    gatus_group: proxmox
+    health_url: "http://{{ ansible_host }}:8000/api/health/"

@@ -1,0 +1,9 @@
+---
+# Currently Dummy Entry, not yet Ansible managed!
+host_services:
+  - name: paperless
+    upstream: "{{ ansible_host }}:8000"
+    exposure: tunnel
+    gatus_group: proxmox
+    gatus_conditions: ["[STATUS] < 400"]
+    health_url: "http://{{ ansible_host }}:8000"

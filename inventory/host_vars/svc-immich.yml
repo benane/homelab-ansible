@@ -1,0 +1,8 @@
+---
+# Currently Dummy Entry, not yet Ansible managed!
+host_services:
+  - name: immich
+    upstream: "{{ ansible_host }}:8088"
+    exposure: tunnel
+    gatus_group: unraid
+    health_url: "http://{{ ansible_host }}:8088/api/server/ping"

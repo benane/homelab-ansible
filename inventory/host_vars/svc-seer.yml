@@ -1,0 +1,8 @@
+---
+# Currently Dummy Entry, not yet Ansible managed!
+host_services:
+  - name: seer
+    upstream: "{{ ansible_host }}:5055"
+    exposure: tunnel
+    gatus_group: unraid
+    health_url: "http://{{ ansible_host }}:5055/api/v1/status"
