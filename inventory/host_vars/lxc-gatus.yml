@@ -16,6 +16,21 @@ gatus_alerting:
     webhook-url: "${DISCORD_WEBHOOK}"
 
 gatus_endpoints:
+  - name: udr-gui
+    group: infrastructure
+    url: "https://172.16.0.1/"
+    interval: 1m
+    client:
+      insecure: true
+      timeout: 10s
+    conditions:
+      - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+    alerts:
+    - type: discord
+      failure-threshold: "{{ gatus_failure_threshold }}"
+      send-on-resolved: true
+
   - name: pve-alderaan-api
     group: infrastructure
     url: "https://{{ hostvars['pve-node01'].ansible_host }}:8006"
