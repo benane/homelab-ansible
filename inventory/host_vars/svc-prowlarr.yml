@@ -1,0 +1,8 @@
+---
+host_services:
+  - name: prowlarr
+    upstream: "{{ ansible_host }}:9696"
+    exposure: intern
+    gatus_group: unraid
+    gatus_conditions: ["[STATUS] == 200", "[BODY].status == OK"]
+    health_url: "http://{{ ansible_host }}:9696/ping"

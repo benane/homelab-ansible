@@ -1,0 +1,7 @@
+---
+host_services:
+  - name: sabnzbd
+    upstream: "{{ ansible_host }}:8080"
+    exposure: intern
+    gatus_group: unraid
+    health_url: "http://{{ ansible_host }}:8080"

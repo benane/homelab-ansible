@@ -1,0 +1,9 @@
+---
+host_services:
+  - name: ha
+    gatus_name: home-assistant
+    upstream: "{{ ansible_host }}:8123"
+    exposure: intern
+    gatus_group: proxmox
+    gatus_conditions: ["[CONNECTED] == true"]
+    health_url: "tcp://{{ ansible_host }}:8123"

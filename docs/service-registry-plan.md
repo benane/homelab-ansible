@@ -61,8 +61,8 @@ ist nur das Sicherheitsnetz.
 | 9 | cloudflared + CF-DNS als Konsument | ✅ (2026-09-20, siehe Phase 9) |
 | 10 | Gatus als Konsument | ✅ |
 | 11 | Ablauf „neuer Dienst" (Playbook-Kette) | 🟡 Playbook-Kette steht, Wrapper-Script fehlt noch |
-| 12 | Jellyfin öffentlich (Portforward, CrowdSec-Agent auf Unraid) | ☐ |
-| 13 | NPM abbauen | ☐ |
+| 12 | Jellyfin öffentlich (Portforward, CrowdSec-Agent auf Unraid) | 🟡 läuft produktiv seit 2026-09-20, Test 6 (Negativ-Test paperless) noch offen |
+| 13 | NPM abbauen | 🟡 alle 14 Dienste migriert (2026-09-21), NPM läuft noch als reine Beobachtungsphase, physischer Abbau offen |
 | – | Ausblick: Authentik & weitere Konsumenten | – |
 
 Warum diese Reihenfolge: Phasen 1–6 bringen **sofort Nutzen** (NPM kann weg)
@@ -1036,6 +1036,87 @@ Erst jetzt, weil Default-Deny (4c) und CrowdSec (5) stehen müssen.
 - Beide Tests aus 6. verhalten sich wie beschrieben.
 - Der Fehl-Login-Test aus Schritt 4 führt zu einer Sperre.
 
+### Ist-Stand (2026-09-20)
+
+Läuft produktiv, in **anderer Reihenfolge** als oben skizziert: Erst Steckbrief +
+Known Proxies + CrowdSec-Agent, **dann** Portforward zuletzt (wie geplant),
+aber DNS und CrowdSec liefen parallel/vermischt statt strikt nacheinander.
+Test 6 (Negativ-Test: `paperless.ledermann.cc` mit der öffentlichen IP über
+`--resolve` muss abbrechen) wurde **nicht** durchgeführt – noch offen.
+
+**Unraid-Community-App statt Docker-Compose:** Kein fertiges Unraid-Template
+deckt den „Agent zeigt auf entfernte LAPI"-Modus ab – die gängigen Templates
+(z.B. das IBRACORP-Template) sind auf eigenständigen Betrieb ausgelegt
+(eigene LAPI + Agent zusammen, Port 8080 exportiert). Lösung: Community-Template
+als Startpunkt nehmen, dann von Hand ergänzen/entfernen:
+- Port `8080` raus (lokale LAPI läuft mit `DISABLE_LOCAL_API=true` eh nicht).
+- Vorgefertigte Felder für `auth.log`/`syslog` (Unraid-eigenes SSH-Log) entfernt
+  – separates Thema, nicht Teil dieser Migration.
+- Vier Variablen von Hand ergänzt: `DISABLE_LOCAL_API=true`,
+  `LOCAL_API_URL=http://172.16.10.204:8080`, `AGENT_USERNAME=unraid`,
+  `AGENT_PASSWORD=<vault_crowdsec_unraid_machine_password>`.
+- `COLLECTIONS=LePresidente/jellyfin` im vorhandenen Feld gesetzt.
+- Ein zusätzlicher Path-Mount (read-only) auf Jellyfins Log-Verzeichnis.
+
+**`lscr.io/linuxserver/jellyfin` hat kein separates Log-Volume** (anders als
+das offizielle Image) – alles hängt an einer einzigen `/config`-Zuordnung.
+Jellyfin schreibt intern trotzdem immer nach `/config/log/log_*.log`
+(image-unabhängig) – der Host-Pfad ist also `<jellyfin-appdata>/log`.
+
+**Acquisition-Datei muss von Hand angelegt werden**, das Unraid-Template
+verdrahtet nur seine eigenen vordefinierten Felder automatisch:
+`<appdata>/config/acquis.d/jellyfin.yaml`:
+```yaml
+---
+filenames:
+  - /var/log/jellyfin/log_*.log
+labels:
+  type: jellyfin
+```
+
+**LAPI-Firewall:** In diesem Repo existiert keine Firewall-Automatisierung
+(keine `ufw`/`nftables`-Rolle) – die Einschränkung „nur Unraid darf Port 8080
+erreichen" muss über Proxmox' eigene Container-Firewall (CT 204 → Firewall)
+gelöst werden, nicht über Ansible. Noch nicht mit Default-Drop abgesichert
+(ACCEPT-Regel allein bringt ohne Default-Policy nichts) – **bewusst
+zurückgestellt**, kein akuter Blocker, da die eigentliche Absicherung über
+Maschinen-Passwort-Auth läuft, nicht über die Firewall.
+
+**Known Proxies – zwei getrennte Stolperfallen, beide real aufgetreten:**
+1. Die Einstellung braucht laut mehreren Jellyfin-GitHub-Issues (u.a.
+   [#15056](https://github.com/jellyfin/jellyfin/issues/15056)) einen Neustart
+   von Jellyfin, reines Speichern reicht nicht.
+2. Schlicht vergessen zu speichern (User-Fehler) – äußert sich **ohne** Fehler
+   oder Warnung im Log (kein „Unknown proxy"), Jellyfin ignoriert
+   `X-Forwarded-For` einfach still und loggt die IP der direkten Verbindung
+   (Caddy). Diagnose-Tipp: Wenn die IP in Jellyfins eigenem Log immer die
+   Caddy-IP ist UND keine „Unknown proxy"-Warnung im Log steht → Einstellung
+   ist vermutlich gar nicht aktiv, nicht falsch formatiert.
+
+**Überraschung beim Testen – zwei unabhängige Erkennungswege liefen
+gleichzeitig:**
+- **Weg 1 (funktionierte die ganze Zeit, unabhängig von alledem):** Caddys
+  eigener, lokaler CrowdSec-Agent liest Caddys **eigenes** Access-Log – der
+  sieht die echte Client-IP direkt (kein Tunnel/Cloudflare zwischen Internet
+  und Caddy bei diesem Portforward), unabhängig von Jellyfins Known-Proxies-
+  Zustand. Szenario `LePresidente/http-generic-401-bf` (aus der
+  `LePresidente/jellyfin`-Collection, wertet Caddys generische 401-Antworten
+  aus) hat beide Testläufe zuerst gebannt, noch bevor die
+  Jellyfin-spezifische Pipeline überhaupt eine Chance hatte.
+- **Weg 2 (der eigentliche Sinn des Unraid-Agents):** `LePresidente/jellyfin-bf`
+  liest Jellyfins **eigenes** App-Log (die Login-Ablehnung mit Body-Kontext) –
+  war beim ersten Testlauf komplett nutzlos (Known-Proxies-Bug, alles
+  whitelisted als privat), lief beim zweiten Testlauf nachweislich korrekt
+  („Poured" statt „Whitelisted" in `cscli metrics`), hat aber **noch nie**
+  selbst eine Sperre ausgelöst – Weg 1 ist strukturell schneller (niedrigere
+  Schwelle/kürzeres Zeitfenster) und gewinnt das Rennen fast immer zuerst.
+  Kein Problem, eher doppelte Absicherung – der langsamere Layer greift nur
+  dann, wenn der schnellere aus irgendeinem Grund mal nicht feuert.
+- **Praktische Konsequenz:** Ein bewusster Test-Login-Angriff sperrt die
+  eigene Test-IP für mehrere Stunden (Caddy-Bouncer wirkt für **alle**
+  Dienste dahinter, nicht nur Jellyfin) – Zugriff während der Sperre nur über
+  VPN oder manuell mit `cscli decisions delete --id <id>` aufheben.
+
 ---
 
 ## Phase 13 – NPM abbauen
@@ -1045,6 +1126,52 @@ Erst jetzt, weil Default-Deny (4c) und CrowdSec (5) stehen müssen.
 3. LXC 208 **stoppen**, nicht löschen – eine Woche beobachten (Gatus!).
 4. Danach löschen, `lxc-nginx-proxy` aus dem Inventory und `npm.lan` aus
    `pihole_dns_hosts` entfernen, README-Punkt auf „erledigt".
+
+### Ist-Stand (2026-09-21): Schritt 1 erledigt, Rest offen
+
+**`pihole_cname_records` ist jetzt leer** – die letzten acht Dienste, die noch
+über NPM liefen (`ha`, `vault`, `prowlarr`, `sonarr`, `radarr`, `sabnzbd`,
+`bazarr`, `maintainerr`), haben jetzt Steckbriefe und laufen über Caddy.
+Damit zeigt **kein** Registry-/Pi-hole-Eintrag mehr auf `npm.lan` – Schritt 1
+ist erfüllt. Schritte 2–4 (CrowdSec auf 208 stilllegen, Container stoppen,
+Beobachtungswoche, endgültig löschen) sind bewusst **noch nicht** angegangen –
+erst beobachten.
+
+Details zur Migration der acht Dienste:
+
+- **`vault`/Vaultwarden** (LXC 205) und **`ha`/Home Assistant** (`vm-hassio`,
+  QEMU-VM) waren bisher nur Inventory-Stubs bzw. gar nicht im Inventory –
+  `container_vmid: 205` nachgetragen, `host_vars/vm-hassio.yml` neu angelegt.
+  Beide Namen weichen zwischen Registry-Name (kurz, für DNS/Caddy: `vault`,
+  `ha`) und Dashboard-Anzeige ab (`vaultwarden`, `home-assistant`) – gelöst
+  über `gatus_name`, gleiches Prinzip wie bei `z2m`/`auth`.
+- **`prowlarr`, `sonarr`, `radarr`, `sabnzbd`, `bazarr`, `maintainerr`**: alle
+  sechs auf Unraid, neue `svc-*`-Stub-Hosts in der `unraid_services`-Gruppe
+  (Muster aus Phase 7b, wie bei `immich`/`seer`/`jellyfin`). Health-Checks
+  mit `gatus_conditions`-Overrides direkt aus den alten Handeinträgen
+  übernommen (`[BODY].status == OK` bei den drei `*arr`-Diensten,
+  `[STATUS] < 400` bei `bazarr`) – ohne das Feld gäbe es an der Stelle
+  denselben Informationsverlust wie bei Grafana/cloudflared (siehe Phase 10).
+- **`ha` steckte fest auf `400: Bad Request`, `trusted_proxies` in der YAML
+  half nicht** – Ursache: Home Assistant hat die HTTP-Integration ab
+  **Version 2026.8 von YAML auf UI-Konfiguration umgestellt**
+  (*Einstellungen → System → Netzwerk*). Ein `http:`-Block in
+  `configuration.yaml` wird seitdem nur noch einmalig beim Update importiert
+  und danach ignoriert – sieht im Editor unverändert „richtig" aus, wirkt
+  aber nicht mehr. Frühere Fehldiagnosen auf dem Weg dorthin (Safe Mode,
+  doppelter `http:`-Schlüssel, fehlende CIDR-Notation) waren alle plausible,
+  aber falsche Fährten – die HA-eigene Log-Zeile (`Received X-Forwarded-For
+  header from an untrusted proxy <ip>`, Logger
+  `homeassistant.components.http.forwarded`) allein reicht nicht, um
+  zwischen „falsch konfiguriert" und „Konfigurationsquelle wird gar nicht
+  mehr gelesen" zu unterscheiden – bei einer stehengebliebenen YAML-Sektion
+  auch die Integrations-Versionshistorie/Breaking-Changes prüfen, nicht nur
+  Syntax und Neustart-Verhalten.
+- **CNAME/A-Record-Konflikt wieder wie gehabt vermieden:** Die acht alten
+  `pihole_cname_records`-Zeilen (`npm.lan`-Ziel) wurden im selben Schritt
+  gelöscht wie die Steckbriefe angelegt wurden – sonst hätten die neuen
+  Registry-A-Records mit den alten CNAMEs kollidiert (gleiches Muster wie bei
+  Phase 6/9).
 
 ---
 

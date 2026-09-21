@@ -1,0 +1,8 @@
+---
+host_services:
+  - name: vault
+    gatus_name: vaultwarden
+    upstream: "{{ ansible_host }}:8000"
+    exposure: intern
+    gatus_group: proxmox
+    health_url: "http://{{ ansible_host }}:8000/alive"

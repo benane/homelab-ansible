@@ -1,0 +1,7 @@
+---
+host_services:
+  - name: maintainerr
+    upstream: "{{ ansible_host }}:6246"
+    exposure: intern
+    gatus_group: unraid
+    health_url: "http://{{ ansible_host }}:6246"

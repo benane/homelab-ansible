@@ -72,16 +72,6 @@ gatus_endpoints:
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
 
-  - name: home-assistant
-    url: "tcp://{{ hostvars['vm-hassio'].ansible_host }}:8123"
-    group: proxmox
-    interval: 1m
-    conditions: ["[CONNECTED] == true"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
   - name: mosquitto
     url: "tcp://{{ hostvars['lxc-mosquitto'].ansible_host }}:1883"
     group: proxmox
@@ -99,82 +89,6 @@ gatus_endpoints:
     conditions:
     - "[CONNECTED] == true"
     - "[BODY].status == OK"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: vaultwarden
-    url: "http://172.16.10.205:8000/alive"
-    group: proxmox
-    interval: 1m
-    conditions: ["[STATUS] == 200"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: maintainerr
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:6246"
-    group: unraid
-    interval: 1m
-    conditions: ["[STATUS] == 200"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: prowlarr
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:9696/ping"
-    group: unraid
-    interval: 1m
-    conditions: 
-    - "[STATUS] == 200"
-    - "[BODY].status == OK"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: radarr
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:7878/ping"
-    group: unraid
-    interval: 1m
-    conditions: 
-    - "[STATUS] == 200"
-    - "[BODY].status == OK"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: sonarr
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8989/ping"
-    group: unraid
-    interval: 1m
-    conditions: 
-    - "[STATUS] == 200"
-    - "[BODY].status == OK"
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: bazarr
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:6767"
-    group: unraid
-    interval: 1m
-    conditions: ["[STATUS] < 400"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
-  - name: sabnzbd
-    url: "http://{{ hostvars['unraid-nas'].ansible_host }}:8080"
-    group: unraid
-    interval: 1m
-    conditions: ["[STATUS] == 200"]
     alerts:
     - type: discord
       failure-threshold: "{{ gatus_failure_threshold }}"

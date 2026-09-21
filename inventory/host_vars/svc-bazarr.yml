@@ -1,0 +1,8 @@
+---
+host_services:
+  - name: bazarr
+    upstream: "{{ ansible_host }}:6767"
+    exposure: intern
+    gatus_group: unraid
+    gatus_conditions: ["[STATUS] < 400"]
+    health_url: "http://{{ ansible_host }}:6767"

@@ -1,0 +1,8 @@
+---
+host_services:
+  - name: radarr
+    upstream: "{{ ansible_host }}:7878"
+    exposure: intern
+    gatus_group: unraid
+    gatus_conditions: ["[STATUS] == 200", "[BODY].status == OK"]
+    health_url: "http://{{ ansible_host }}:7878/ping"

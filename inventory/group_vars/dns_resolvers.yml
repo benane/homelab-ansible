@@ -1,15 +1,7 @@
 ---
 unbound_private_domains:
   - "myunraid.net"
-pihole_cname_records:
-  - "ha.ledermann.cc,npm.lan"
-  - "prowlarr.lan,npm.lan"
-  - "sonarr.lan,npm.lan"
-  - "radarr.lan,npm.lan"
-  - "sabnzbd.lan,npm.lan"
-  - "vault.ledermann.cc,npm.lan"
-  - "maintainerr.lan,npm.lan"
-  - "bazarr.lan,npm.lan"
+pihole_cname_records: []
 pihole_dns_hosts:
   - "172.16.10.10 alderaan.ledermann.cc"
   - "172.16.10.50 corellia.ledermann.cc"
