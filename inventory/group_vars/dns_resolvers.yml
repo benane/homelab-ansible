@@ -8,10 +8,7 @@ pihole_dns_hosts:
   - "172.16.10.20 unraid.lan"
   - "172.16.10.1 unifi.lan"
   - "172.16.10.40 pihole1.lan"
-  - "172.16.10.203 pihole2.lan"
-  - "172.16.10.208 npm.lan"
   - "172.16.10.60 mustafar.lan"
-  - "172.16.50.30 kamino.lan"
-  - "172.16.10.60 pihole3.lan"
+  - "172.16.10.60 pihole2.lan"
 pihole_dns_upstreams:
   - "127.0.0.1#5335"
