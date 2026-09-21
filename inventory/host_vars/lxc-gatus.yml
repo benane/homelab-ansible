@@ -72,16 +72,6 @@ gatus_endpoints:
       failure-threshold: "{{ gatus_failure_threshold }}"
       send-on-resolved: true
 
-  - name: mosquitto
-    url: "tcp://{{ hostvars['lxc-mosquitto'].ansible_host }}:1883"
-    group: proxmox
-    interval: 1m
-    conditions: ["[CONNECTED] == true"]
-    alerts:
-    - type: discord
-      failure-threshold: "{{ gatus_failure_threshold }}"
-      send-on-resolved: true
-
   - name: pihole-hoth
     url: "{{ hostvars['rpi-dns'].ansible_host }}"
     group: DNS
