@@ -60,8 +60,8 @@ ist nur das Sicherheitsnetz.
 | 8 | Pi-hole als Konsument | ✅ |
 | 9 | cloudflared + CF-DNS als Konsument | ✅ (2026-09-20, siehe Phase 9) |
 | 10 | Gatus als Konsument | ✅ |
-| 11 | Ablauf „neuer Dienst" (Playbook-Kette) | 🟡 Playbook-Kette steht, Wrapper-Script fehlt noch |
-| 12 | Jellyfin öffentlich (Portforward, CrowdSec-Agent auf Unraid) | 🟡 läuft produktiv seit 2026-09-20, Test 6 (Negativ-Test paperless) noch offen |
+| 11 | Ablauf „neuer Dienst" (Playbook-Kette) | ✅ (2026-09-21, `scripts/new-service.sh`) |
+| 12 | Jellyfin öffentlich (Portforward, CrowdSec-Agent auf Unraid) | ✅ (2026-09-21, Negativtest bestanden – Ersatzmethode, siehe Phase 12) |
 | 13 | NPM abbauen | 🟡 alle 14 Dienste migriert (2026-09-21), NPM läuft noch als reine Beobachtungsphase, physischer Abbau offen |
 | – | Ausblick: Authentik & weitere Konsumenten | – |
 
@@ -991,12 +991,15 @@ ansible-playbook playbooks/service_registry.yml
 4. Fertig: Container läuft, DNS, Proxy, Zertifikat, ggf. Tunnel und Gatus-Check
    sind da.
 
-**Ist-Stand:** Das Wrapper-Script `new-service.sh` gibt es noch nicht (nur
-`scripts/build_caddy.sh`, `scripts/build_gatus.sh`,
-`scripts/setup_control_node.sh` existieren bisher). Aktuell also weiterhin
-zwei manuelle Aufrufe (`container_site.yml --limit …` dann
-`service_registry.yml`) statt einem Script-Aufruf. Kleine, aber offene
-Lücke – lohnt sich, sobald neue Dienste öfter dazukommen.
+**Ist-Stand (2026-09-21): erledigt.** `scripts/new-service.sh` existiert –
+kapselt genau die zwei Aufrufe aus Phase 11 (`container_site.yml --limit
+<host> "$@"`, danach `service_registry.yml` ohne Limit). Bewusst **kein**
+einzelner `import_playbook`-Verbund: `--limit` gilt für den gesamten
+`ansible-playbook`-Prozess, ein angehängtes `service_registry.yml` würde vom
+selben `--limit` mitgefiltert und die Konsumenten-Plays stillschweigend
+übersprungen (dieselbe Falle wie oben). Aufruf: `./scripts/new-service.sh
+lxc-neu -u root` (zusätzliche Optionen werden 1:1 an den ersten Aufruf
+durchgereicht).
 
 ---
 
@@ -1041,8 +1044,28 @@ Erst jetzt, weil Default-Deny (4c) und CrowdSec (5) stehen müssen.
 Läuft produktiv, in **anderer Reihenfolge** als oben skizziert: Erst Steckbrief +
 Known Proxies + CrowdSec-Agent, **dann** Portforward zuletzt (wie geplant),
 aber DNS und CrowdSec liefen parallel/vermischt statt strikt nacheinander.
-Test 6 (Negativ-Test: `paperless.ledermann.cc` mit der öffentlichen IP über
-`--resolve` muss abbrechen) wurde **nicht** durchgeführt – noch offen.
+**Test 6 (2026-09-21) – bestanden, mit Ersatzmethode:** Der geplante Test
+(`curl --resolve paperless.ledermann.cc:443:<öffentliche-ip>`) ließ sich vom
+Handy aus nicht durchführen (kein `--resolve`-fähiges Tool unterwegs).
+Ersatzweise die nackte öffentliche IP direkt in Safari über Mobilfunk
+aufgerufen (`https://195.69.173.18`, kein Host-Header, der zu `jellyfin`
+oder irgendeinem anderen `host`-Matcher passt) – Ergebnis: „Safari kann
+keine sichere Verbindung herstellen", kein Zertifikats-Override-Dialog wie
+bei einem bloßen Namens-Mismatch, sondern ein kompletter Verbindungsabbruch –
+konsistent mit Caddys `abort` im `@blocked`-Handler. Prüft dieselbe
+Sicherheitsgrenze (Default-Deny für alles außer `jellyfin` von
+Nicht-LAN-IPs), nicht exakt den ursprünglich skizzierten Testaufbau.
+**Wichtige Randnotiz zum eigenen Testen:** Ein erster Versuch, das per
+`curl` aus einer Sandbox-artigen Umgebung zu prüfen, lieferte fälschlich
+einen erfolgreichen Zugriff (`302`, Paperless antwortete) – Ursache war
+**kein** Caddy-Bug, sondern dass die Sandbox über dieselbe öffentliche IP
+des Testenden geroutet wurde (`curl https://ifconfig.me` bestätigte das) und
+die Anfrage dadurch als NAT-Hairpin bei Caddy vermutlich mit einer privaten
+Absender-IP ankam – `not remote_ip private_ranges` griff also fälschlich.
+Lehre: Vor einem sicherheitsrelevanten Negativtest immer verifizieren, dass
+der Testclient wirklich von außen kommt (`curl https://ifconfig.me` gegen
+die erwartete öffentliche IP prüfen), sonst ist ein „bestandener" Test
+wertlos – und ein „durchgefallener" Test genauso trügerisch.
 
 **Unraid-Community-App statt Docker-Compose:** Kein fertiges Unraid-Template
 deckt den „Agent zeigt auf entfernte LAPI"-Modus ab – die gängigen Templates
