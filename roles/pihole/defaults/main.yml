@@ -6,6 +6,7 @@ pihole_ntp_enabled: false
 
 pihole_registry_hosts: >-
   {{ service_registry
+     | selectattr('exposure', 'ne', 'none')
      | map(attribute='name')
      | map('regex_replace', '^(.*)$', hostvars['lxc-caddy'].ansible_host ~ ' \1.' ~ external_domain)
      | list }}

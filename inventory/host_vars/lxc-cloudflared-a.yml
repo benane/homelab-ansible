@@ -1,7 +1,7 @@
 ---
 host_services:
   - name: cloudflared-a
-    upstream: "{{ ansible_host }}:{{ cloudflared_metrics_port }}"
-    exposure: intern
+    exposure: none
     gatus_group: proxmox
+    gatus_conditions: ["[STATUS] == 200", "[BODY].readyConnections > 0"]
     health_url: "http://{{ ansible_host }}:{{ cloudflared_metrics_port }}/ready"

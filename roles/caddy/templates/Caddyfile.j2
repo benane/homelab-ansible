@@ -33,7 +33,7 @@
         metrics /metrics
     }
 
-{% for s in service_registry if s.name != 'caddy' %}
+{% for s in service_registry if s.upstream is defined %}
     @{{ s.name }} host {{ s.name }}.{{ external_domain }}
     handle @{{ s.name }} {
         reverse_proxy {{ s.upstream }}{% if s.upstream_insecure | default(false) %} {
