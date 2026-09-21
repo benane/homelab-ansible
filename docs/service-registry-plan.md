@@ -34,17 +34,59 @@ Jede Phase endet mit **„Fertig, wenn …"** – erst dann zur nächsten.
                           Dienste (LXCs, Unraid)
 ```
 
-Drei Arten von Diensten – das Feld `exposure` im Steckbrief:
+Vier Arten von Diensten – das Feld `exposure` im Steckbrief:
 
 | `exposure` | Pi-hole | Caddy | cloudflared + CF-DNS | Portforward |
 |---|---|---|---|---|
 | `intern` | ✅ | ✅ nur LAN | – | – |
 | `tunnel` | ✅ | ✅ | ✅ | – |
 | `public` | ✅ | ✅ auch von außen | – (A-Record, grau) | ✅ |
+| `none` | – | – | – | – |
 
 Merksatz: **Ob etwas von außen erreichbar ist, entscheidet das DNS bzw. der
 Tunnel – nicht Caddy.** Caddy macht für alle dasselbe; die Default-Deny-Regel
 ist nur das Sicherheitsnetz.
+
+### `exposure: none` – Gatus-only, ohne `upstream` (ergänzt 2026-09-21)
+
+Vierter Wert, nachträglich gebraucht für Dienste, die **kein HTTP** sprechen
+(MQTT bei `mosquitto`) oder deren Health-Check nie über Caddy/DNS läuft,
+sondern immer direkt per IP (`cloudflared-a`/`-b` – Gatus prüft `/ready`
+schon immer direkt gegen `upstream`, siehe Phase 10). Für solche Einträge
+gibt's kein `upstream`-Feld im Steckbrief, nur `health_url` für Gatus:
+
+```yaml
+host_services:
+  - name: mosquitto
+    exposure: none
+    gatus_group: proxmox
+    gatus_conditions: ["[CONNECTED] == true"]
+    health_url: "tcp://{{ ansible_host }}:1883"
+```
+
+Zwei **unterschiedliche** Filter an zwei verschiedenen Stellen, bewusst nicht
+derselbe:
+
+- **`roles/caddy/templates/Caddyfile.j2`**, Schleife: `{% for s in
+  service_registry if s.upstream is defined %}` – fragt direkt das Feld ab,
+  das die Schleife selbst braucht (`reverse_proxy {{ s.upstream }}`), nicht
+  `exposure`. Schließt Caddys eigenen Steckbrief automatisch mit ein (hatte
+  nie `upstream`).
+- **`roles/pihole/defaults/main.yml`**, `pihole_registry_hosts`:
+  `service_registry | selectattr('exposure', 'ne', 'none') | map(attribute='name')
+  | ...` – **wichtig: `selectattr` vor `map(attribute='name')`**, sonst hat
+  die Liste zu dem Zeitpunkt nur noch Namens-Strings ohne `.exposure`-Attribut
+  mehr, `selectattr` liefe ins Leere.
+
+**Warum zwei verschiedene Bedingungen statt einer gemeinsamen:** Caddys
+eigener Steckbrief (`name: caddy`) braucht weiterhin einen DNS-Eintrag
+(`caddy.ledermann.cc` – wird über einen fest verdrahteten
+`@caddymetrics`-Block beantwortet, nicht über die generische Schleife), aber
+keinen generierten `reverse_proxy`-Block. `exposure: none` hätte dort **beide**
+gleichzeitig abgeschaltet und Caddys eigenen Health-Check kaputt gemacht –
+deshalb bleibt Caddy bei `exposure: intern` (unverändert) und nur die
+DNS-Seite fragt `exposure`, während die Caddy-Proxy-Seite weiter `upstream`
+fragt.
 
 ### Reihenfolge
 
