@@ -1,0 +1,7 @@
+---
+host_services:
+  - name: mosquitto
+    exposure: none
+    gatus_group: proxmox
+    gatus_conditions: ["[CONNECTED] == true"]
+    health_url: "tcp://{{ ansible_host }}:1883"
