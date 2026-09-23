@@ -1,0 +1,12 @@
+[unifi]
+dynamic = false
+
+[unifi.defaults]
+url = "https://172.16.0.1"
+user = "unifipoller"
+pass = "{{ vault_unpoller_password }}"
+verify_ssl = false
+
+[prometheus]
+disable = false
+http_listen = "0.0.0.0:9130"

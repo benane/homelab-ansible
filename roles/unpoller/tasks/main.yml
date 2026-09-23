@@ -1,0 +1,42 @@
+---
+- name: unpoller-Repo eintragen
+  ansible.builtin.deb822_repository:
+    name: unpoller
+    types: deb
+    uris: "https://packagecloud.io/golift/pkgs/ubuntu"
+    suites: focal
+    components: main
+    signed_by: "https://packagecloud.io/golift/pkgs/gpgkey"
+  register: unpoller_repo
+
+- name: APT-Cache aktualisieren
+  ansible.builtin.apt:
+    update_cache: true
+  when: unpoller_repo.changed
+
+- name: unpoller installieren
+  ansible.builtin.apt:
+    name:
+      - unpoller
+    state: present
+
+- name: Konfigurationsverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ unpoller_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: tmp.mount maskieren #(scheitert in unprivilegierten LXC-Containern)
+  ansible.builtin.systemd:
+    name: tmp.mount
+    masked: true
+
+- name: Konfiguration schreiben
+  ansible.builtin.template:
+    src: up.conf.j2
+    dest: "{{ unpoller_config_dir }}/up.conf"
+    mode: "0644"
+  notify: unpoller neu starten
+  tags: [unpoller-config]

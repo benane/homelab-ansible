@@ -1,0 +1,8 @@
+---
+host_services:
+  - name: unpoller
+    upstream: "{{ ansible_host }}:9130"
+    exposure: intern
+    gatus_group: proxmox
+    health_url: "http://{{ ansible_host }}:9130/metrics"
+    
