@@ -3,3 +3,6 @@
   ansible.builtin.file:
     path: /etc/systemd/system/pihole-FTL.service.d
     state: directory
+    owner: root
+    group: root
+    mode: "0755"

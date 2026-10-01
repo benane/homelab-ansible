@@ -3,8 +3,9 @@
   ansible.builtin.template:
     src: pihole-FTL.env.j2
     dest: /etc/pihole/pihole-FTL.env
-    mode: "0600"
-    owner: root
+    mode: "0640"
+    owner: pihole
+    group: pihole
   no_log: true
   notify: pihole-FTL neu starten
   tags: [pihole-config]
