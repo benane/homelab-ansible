@@ -232,13 +232,24 @@ Datenverzeichnis geht an den Dienstuser. Nebeneffekt: der Dienst kann seinen eig
 Code nicht verändern.
 
 **`users.yml` nur, wo kein Paket den User anlegt.** Service-Pakete aus APT legen ihren
-User im `postinst` selbst an (`grafana` → uid 102, `unpoller` → uid 999). Legt die Rolle
-ihn *zusätzlich* an, entsteht eine zweite Quelle der Wahrheit: auf dem gewachsenen
-Container ändert sie Attribute (z. B. Shell `/bin/false` → `/usr/sbin/nologin`), auf dem
-frischen Node gewinnt die Rolle und das Paket überspringt den Schritt – mit womöglich
-anderem Home. Entweder bewusst die Rolle besitzen lassen (dann alle Attribute explizit)
-oder weglassen. Nicht beides halb. Eigene `users.yml` ist **Pflicht**, wo es kein Paket
-gibt – `zigbee2mqtt` wird per git-clone installiert, dort muss die Rolle den User anlegen.
+User im `postinst` selbst an. Legt die Rolle ihn *zusätzlich* an, entsteht eine zweite
+Quelle der Wahrheit – und sie gewinnt nur halb: UID/GID willst du nicht festnageln
+(Kollisionsrisiko), also bleibt ein Besitzanspruch, der Attribute verändert, ohne sie zu
+kontrollieren. Beobachtet bei `unpoller`: die Rolle stellte die Shell von `/bin/false` auf
+`/usr/sbin/nologin` um, ohne dass es jemand wollte. Dazu läuft `users.yml` **vor**
+`install.yml` – der vorab angelegte User lässt das `postinst` seinen eigenen Schritt
+überspringen, und das tut womöglich mehr als nur den User anzulegen.
+
+**Regel in diesem Repo:** die Rolle legt den User genau dann an, wenn es sonst niemand tut.
+
+| Rolle | legt den User an |
+|---|---|
+| `grafana` | APT-Paket (uid 102) |
+| `unpoller` | APT-Paket (uid 999) |
+| `zigbee2mqtt` | **die Rolle** – git-clone, es gibt kein Paket |
+
+Beim Weglassen auf die Reihenfolge achten: `install.yml` muss vor `dirs.yml` laufen, damit
+die Gruppe existiert, wenn das Config-Verzeichnis sie braucht.
 
 **HOME nicht vergessen.** `create_home: false` legt kein Home an, der Eintrag in
 `/etc/passwd` existiert trotzdem. Zeigt er auf ein Verzeichnis, in das der Dienstuser
@@ -277,7 +288,7 @@ Fehlerklasse wie ein Dienst, der läuft, aber nicht `enabled` ist.
 |---|---|---|
 | `grafana` | A | verifiziert, idempotent, Kaltstart geprüft |
 | `zigbee2mqtt` | C | verifiziert, idempotent, läuft als eigener User |
-| `unpoller` | A | verifiziert, idempotent; `service.yml` fehlt (Paket enabled selbst) |
+| `unpoller` | A | verifiziert, idempotent; User kommt vom Paket; `service.yml` fehlt (Paket enabled selbst) |
 | `proxmox_node` (pve-exporter) | A | bereits vollständig: `root:<dienst>` `0640` |
 | `caddy`, `gatus`, `pihole` | B | `0600`; `owner`/`group` implizit, landet korrekt auf `root:root` |
 | `cloudflared` | – | läuft als root (Unit stammt von `cloudflared service install`), Credentials `0600` – korrekt |
