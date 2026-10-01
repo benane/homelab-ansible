@@ -12,6 +12,8 @@
     src: secrets.env.j2
     dest: "{{ caddy_config_dir }}/.env"
     mode: "0600"
+    owner: root
+    group: root
   notify: caddy neu starten
   tags: [caddy-config]
   
