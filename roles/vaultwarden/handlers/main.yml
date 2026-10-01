@@ -1,0 +1,6 @@
+---
+- name: vaultwarden neu starten
+  ansible.builtin.systemd:
+    name: vaultwarden.service
+    state: restarted
+    daemon_reload: true

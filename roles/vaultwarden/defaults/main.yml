@@ -1,0 +1,4 @@
+vaultwarden_version: 1.37.1
+vaultwarden_user: vaultwarden
+vaultwarden_config_dir: /etc/vaultwarden
+vaultwarden_data_dir: /opt/vaultwarden/data

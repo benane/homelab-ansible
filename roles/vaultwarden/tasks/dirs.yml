@@ -1,0 +1,16 @@
+---
+- name: Konfigurationsverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ vaultwarden_config_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Datenverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ vaultwarden_data_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
