@@ -68,6 +68,28 @@ Umgebungsvariablen. Deshalb reicht `root:root 0600` – und deshalb ist das das
 strengste der drei Muster. Wenn ein Dienst Secrets über Variablen annimmt, ist B
 immer die erste Wahl.
 
+**Vorbedingung, die man prüfen muss:** Muster B hilft nur, wenn der Dienst die Variable
+**nicht in seine Config zurückschreibt**. Sonst liegt das Secret hinterher an zwei Stellen
+statt an einer, und das ist strikt schlechter.
+
+Gemessen an zwei Diensten:
+
+| | Start | mtime der Config | Ergebnis |
+|---|---|---|---|
+| grafana | 17:29:52 | 17:29:46 – **davor** | schreibt nicht zurück → B funktioniert |
+| zigbee2mqtt | 17:25:08 | 17:25:08.665 – **auf die Sekunde** | serialisiert die Einstellungen beim Start und trägt das Passwort in Klartext ein |
+
+Bei z2m war das Secret danach in `/etc/zigbee2mqtt/.env` **und** in `configuration.yaml`.
+Der Umbau wurde deshalb zurückgenommen. Erkennbar ist es zusätzlich an der Position: z2m
+schrieb die `password:`-Zeile ans Ende des Blocks, nicht dorthin, wo das Template sie hatte –
+die Signatur einer maschinellen Serialisierung. Siehe
+[Issue #27077](https://github.com/Koenkk/zigbee2mqtt/issues/27077); betrifft nicht nur das
+HA-Add-on, sondern auch Standalone-Installationen.
+
+**Der Test kostet einen Neustart:** Secret aus der Config entfernen, Dienst neu starten,
+`mtime` gegen die Startzeit vergleichen. Liegt sie auf der Startsekunde, hat der Dienst
+geschrieben.
+
 ### Muster C – der Dienst pflegt seine Datei selbst
 
 Schreibt ein Dienst seine Config zur Laufzeit zurück (zigbee2mqtt tut das bei
@@ -251,6 +273,42 @@ kontrollieren. Beobachtet bei `unpoller`: die Rolle stellte die Shell von `/bin/
 Beim Weglassen auf die Reihenfolge achten: `install.yml` muss vor `dirs.yml` laufen, damit
 die Gruppe existiert, wenn das Config-Verzeichnis sie braucht.
 
+**Der Dienst kann auch nur die *Metadaten* zurückschreiben.** Bei z2m war es der Inhalt,
+bei Pi-hole sind es Owner und Modus: Pi-hole normalisiert `/etc/pihole` nach jedem Start auf
+`pihole:pihole 0640`. Die Rolle deklarierte `root` / `0600` und verlor nach jedem Neustart –
+`--check` stand dauerhaft auf `changed`, ohne dass es jemandem auffiel.
+
+Diagnose dafür: **mtime gegen ctime vergleichen.** `chown`/`chmod` ändern nur die ctime,
+ein Schreibvorgang auch die mtime.
+
+```bash
+stat -c "mtime=%y%nctime=%z" <datei>
+```
+
+Liegt die ctime später, hat nach Ansible noch jemand Rechte geändert:
+
+```
+mtime = 2026-09-25 10:44:38   ← Ansible schrieb den Inhalt
+ctime = 2026-09-25 10:45:02   ← 24 s später: Pi-hole chownte
+```
+
+Daraus folgt eine Arbeitsteilung, die man einfach aufschreiben muss: **Ansible besitzt den
+Inhalt, der Dienst besitzt die Metadaten.** Dann braucht es kein `force: false` – nur die
+Werte, die der Dienst ohnehin durchsetzt.
+
+**Ob du nachgibst oder deinen Wert durchsetzt, hängt davon ab, wie oft die andere Seite ihn
+zurücksetzt:**
+
+| | wer setzt zurück | wie oft | Entscheidung |
+|---|---|---|---|
+| `pihole` | Pi-hole selbst | bei jedem Neustart | nachgeben: `pihole:pihole 0640` deklarieren |
+| `grafana` | das `postinst` beim Paket-Upgrade | selten | durchsetzen: `0750` deklarieren, die Rolle konvergiert wieder |
+
+Bei grafana setzt das `postinst` die Verzeichnisse unter `/etc/grafana` auf `0755` zurück –
+belegt an einem `apt full-upgrade` (13.2.2 → 13.2.3): `configure` um 11:27:09, ctime der
+Verzeichnisse 11:27:10. Die **Dateien** behielten dabei ihre `0640`, nur die Verzeichnisse
+wurden geöffnet. Das `changed` nach einem Upgrade ist deshalb nützliches Signal, kein Ärgernis.
+
 **HOME nicht vergessen.** `create_home: false` legt kein Home an, der Eintrag in
 `/etc/passwd` existiert trotzdem. Zeigt er auf ein Verzeichnis, in das der Dienstuser
 nicht schreiben darf, scheitern Tools, die dort Caches ablegen (npm/pnpm:
@@ -286,11 +344,12 @@ Fehlerklasse wie ein Dienst, der läuft, aber nicht `enabled` ist.
 
 | Rolle | Muster | Status |
 |---|---|---|
-| `grafana` | A | verifiziert, idempotent, Kaltstart geprüft |
-| `zigbee2mqtt` | C | verifiziert, idempotent, läuft als eigener User |
+| `grafana` | A + B | Admin-Passwort in `/etc/grafana/.env` (`root:root 0600`) via systemd-Drop-in; `grafana.ini` enthält kein Secret mehr; verifiziert, idempotent |
+| `zigbee2mqtt` | C | verifiziert, idempotent, läuft als eigener User. Muster B hier **nicht möglich** – z2m schreibt das Passwort zurück (siehe §2) |
 | `unpoller` | A | verifiziert, idempotent; User kommt vom Paket; `service.yml` fehlt (Paket enabled selbst) |
 | `proxmox_node` (pve-exporter) | A | bereits vollständig: `root:<dienst>` `0640` |
-| `caddy`, `gatus`, `pihole` | B | `0600`; `owner`/`group` implizit, landet korrekt auf `root:root` |
+| `caddy`, `gatus` | B | `0600`; `owner`/`group` implizit, landet korrekt auf `root:root` |
+| `pihole` | B + C | `pihole-FTL.env` ist `pihole:pihole 0640` (Pi-hole erzwingt es), Drop-in `root:root 0644` – verifiziert, `changed=0` |
 | `cloudflared` | – | läuft als root (Unit stammt von `cloudflared service install`), Credentials `0600` – korrekt |
 | `mosquitto` | C | Config enthält kein Secret; `/etc/mosquitto/passwd` ist `mosquitto:mosquitto 0600` – korrekt |
 | `unbound`, `emmc_saver`, `crowdsec` | – | kein Secret, `mode` teilweise nicht gesetzt – unsauber, aber harmlos |

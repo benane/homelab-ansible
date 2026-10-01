@@ -5,6 +5,7 @@
     dest: "{{ z2m_data_dir }}/configuration.yaml"
     force: false
   notify: zigbee2mqtt neu starten
+  tags: [zigbee2mqtt-config]
 
 - name: Konfig Rechte setzen
   ansible.builtin.file:
@@ -12,3 +13,4 @@
     owner: "{{ z2m_user }}"
     group: "{{ z2m_user }}"
     mode: "0600"
+  tags: [zigbee2mqtt-config]
