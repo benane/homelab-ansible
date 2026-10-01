@@ -3,7 +3,9 @@
   ansible.builtin.template:
     src: grafana.ini.j2
     dest: "{{ grafana_config_dir }}/grafana.ini"
-    mode: "0644"
+    owner: root
+    group: grafana
+    mode: "0640"
   notify: grafana neu starten
   tags: [grafana-config]
 
@@ -11,7 +13,9 @@
   ansible.builtin.template:
     src: datasources.yml.j2
     dest: "{{ grafana_config_dir }}/provisioning/datasources/datasources.yml"
-    mode: "0644"
+    owner: root
+    group: grafana
+    mode: "0640"
   notify: grafana neu starten
   tags: [grafana-config]
 
@@ -19,6 +23,8 @@
   ansible.builtin.template:
     src: dashboards.yml.j2
     dest: "{{ grafana_config_dir }}/provisioning/dashboards/dashboards.yml"
-    mode: "0644"
+    owner: root
+    group: grafana
+    mode: "0640"
   notify: grafana neu starten
   tags: [grafana-config]

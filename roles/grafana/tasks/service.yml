@@ -1,0 +1,10 @@
+---
+# The Debian package does not enable grafana-server on its own. Without this task the
+# service ran after each playbook run (via the restart handler) but was gone after the
+# next container reboot.
+- name: Grafana aktivieren und starten
+  ansible.builtin.systemd:
+    name: grafana-server
+    state: started
+    enabled: true
+    daemon_reload: true

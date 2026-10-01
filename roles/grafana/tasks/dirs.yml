@@ -4,29 +4,29 @@
     path: "{{ grafana_config_dir }}"
     state: directory
     owner: root
-    group: root
-    mode: "0755"
+    group: grafana
+    mode: "0750"
 
 - name: Datasources anlegen
   ansible.builtin.file:
     path: "{{ grafana_config_dir }}/provisioning/datasources"
     state: directory
     owner: root
-    group: root
-    mode: "0755"
+    group: grafana
+    mode: "0750"
 
 - name: Dashboards Sources anlegen
   ansible.builtin.file:
     path: "{{ grafana_config_dir }}/provisioning/dashboards"
     state: directory
     owner: root
-    group: root
-    mode: "0755"
+    group: grafana
+    mode: "0750"
 
 - name: Dashboards Verzeichnis anlegen
   ansible.builtin.file:
     path: "{{ grafana_dashboards_dir }}"
     state: directory
     owner: root
-    group: root
-    mode: "0755"
+    group: grafana
+    mode: "0750"
