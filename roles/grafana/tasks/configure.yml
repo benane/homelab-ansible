@@ -1,5 +1,5 @@
 ---
-- name: Grafana Konfig schreiben
+- name: Konfig schreiben
   ansible.builtin.template:
     src: grafana.ini.j2
     dest: "{{ grafana_config_dir }}/grafana.ini"
@@ -9,7 +9,7 @@
   notify: grafana neu starten
   tags: [grafana-config]
 
-- name: Grafana Datasources schreiben
+- name: Datasources schreiben
   ansible.builtin.template:
     src: datasources.yml.j2
     dest: "{{ grafana_config_dir }}/provisioning/datasources/datasources.yml"
@@ -19,12 +19,22 @@
   notify: grafana neu starten
   tags: [grafana-config]
 
-- name: Grafana Provisioning schreiben
+- name: Provisioning schreiben
   ansible.builtin.template:
     src: dashboards.yml.j2
     dest: "{{ grafana_config_dir }}/provisioning/dashboards/dashboards.yml"
     owner: root
     group: grafana
     mode: "0640"
+  notify: grafana neu starten
+  tags: [grafana-config]
+
+- name: .env schreiben
+  ansible.builtin.template:
+    src: secrets.env.j2
+    dest: "{{ grafana_config_dir }}/.env"
+    mode: "0600"
+    owner: root
+    group: root
   notify: grafana neu starten
   tags: [grafana-config]

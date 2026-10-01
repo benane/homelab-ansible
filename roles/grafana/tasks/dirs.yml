@@ -30,3 +30,11 @@
     owner: root
     group: grafana
     mode: "0750"
+
+- name: Overrideverzeichnis anlegen
+  ansible.builtin.file:
+    path: /etc/systemd/system/grafana-server.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
