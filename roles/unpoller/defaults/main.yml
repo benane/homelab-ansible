@@ -1,2 +1,3 @@
-unpoller_user: unifipoller
+unpoller_user: unpoller
+unpoller_unifi_user: unifipoller
 unpoller_config_dir: /etc/unpoller

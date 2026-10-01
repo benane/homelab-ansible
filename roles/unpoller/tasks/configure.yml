@@ -1,0 +1,15 @@
+---
+- name: tmp.mount maskieren #(scheitert in unprivilegierten LXC-Containern)
+  ansible.builtin.systemd:
+    name: tmp.mount
+    masked: true
+
+- name: Konfiguration schreiben
+  ansible.builtin.template:
+    src: up.conf.j2
+    dest: "{{ unpoller_config_dir }}/up.conf"
+    owner: root
+    group: "{{ unpoller_user}}"
+    mode: "0640"
+  notify: unpoller neu starten
+  tags: [unpoller-config]
