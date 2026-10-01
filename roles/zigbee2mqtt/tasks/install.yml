@@ -1,0 +1,46 @@
+---
+- name: NodeSource-Repo eintragen
+  ansible.builtin.deb822_repository:
+    name: nodesource
+    types: deb
+    uris: "https://deb.nodesource.com/node_{{ z2m_node_major_version }}.x"
+    suites: nodistro
+    components: main
+    signed_by: "https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key"
+  register: node_repo
+
+- name: APT-Cache aktualisieren
+  ansible.builtin.apt:
+    update_cache: true
+  when: node_repo.changed
+
+- name: Node.js installieren
+  ansible.builtin.apt:
+    name: nodejs
+    state: present
+
+- name: Build-Werkzeuge installieren
+  ansible.builtin.apt:
+    name:
+      - make
+      - g++
+      - gcc
+    state: present
+
+- name: zigbee2mqtt-Repo klonen
+  ansible.builtin.git:
+    repo: https://github.com/Koenkk/zigbee2mqtt.git
+    dest: "{{ z2m_install_dir }}"
+    version: "{{ z2m_version }}"
+  register: z2m_repo
+
+- name: pnpm installieren
+  ansible.builtin.command: npm install -g pnpm
+  args:
+    creates: /usr/bin/pnpm
+
+- name: Abhängigkeiten installieren
+  ansible.builtin.command: pnpm install --frozen-lockfile
+  args:
+    chdir: "{{ z2m_install_dir }}"
+  when: z2m_repo.changed

@@ -1,0 +1,15 @@
+---
+- name: Gruppe anlegen
+  ansible.builtin.group:
+    name: "{{ z2m_user }}"
+    state: present
+
+- name: Service-User anlegen
+  ansible.builtin.user:
+    name: "{{ z2m_user }}"
+    group: "{{ z2m_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+    home: "{{ z2m_data_dir }}"
+    

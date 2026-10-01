@@ -1,0 +1,14 @@
+---
+- name: Konfiguration einspielen
+  ansible.builtin.template:
+    src: configuration.yaml.j2
+    dest: "{{ z2m_data_dir }}/configuration.yaml"
+    force: false
+  notify: zigbee2mqtt neu starten
+
+- name: Konfig Rechte setzen
+  ansible.builtin.file:
+    path: "{{ z2m_data_dir }}/configuration.yaml"
+    owner: "{{ z2m_user }}"
+    group: "{{ z2m_user }}"
+    mode: "0600"

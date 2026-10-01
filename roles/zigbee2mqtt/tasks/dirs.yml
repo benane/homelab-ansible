@@ -1,0 +1,16 @@
+--- 
+- name: Datenverzeichnis anlegen
+  ansible.builtin.file:
+    path: "{{ z2m_data_dir }}"
+    state: directory
+    owner: "{{ z2m_user }}"
+    group: "{{ z2m_user }}"
+    mode: "0750"
+
+- name: Rekursive Owner für Datenverzeichnis und alles darin setzen
+  ansible.builtin.file:
+    path: "{{ z2m_data_dir }}"
+    state: directory
+    owner: "{{ z2m_user }}"
+    group: "{{ z2m_user }}"
+    recurse: true

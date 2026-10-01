@@ -3,13 +3,13 @@ Description=zigbee2mqtt
 After=network.target
 
 [Service]
-ExecStart=/bin/pnpm start
-WorkingDirectory=/opt/zigbee2mqtt
+ExecStart=/usr/bin/node index.js
+WorkingDirectory={{ z2m_install_dir }}
 StandardOutput=inherit
 StandardError=inherit
 Restart=on-failure
 RestartSec=10s
-User=root
+User={{ z2m_user }}
 
 [Install]
 WantedBy=multi-user.target
